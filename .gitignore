@@ -1,0 +1,32 @@
+# dependencies and build output
+node_modules/
+dist/
+.vite/
+coverage/
+
+# secrets: every .env file except the examples
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+
+# local data (moderation database contains IP addresses; ad settings; Redis snapshots)
+server/data/
+*.rdb
+
+# logs
+*.log
+npm-debug.log*
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+.claude/

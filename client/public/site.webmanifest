@@ -1,0 +1,14 @@
+{
+  "name": "ChatNow – Free Chat with Strangers",
+  "short_name": "ChatNow",
+  "description": "Free anonymous one-to-one chat. No sign-up, no app. 18+ only.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#100B09",
+  "theme_color": "#100B09",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

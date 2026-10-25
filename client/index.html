@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cut" />
+    <meta name="theme-color" content="#100B09" />
+    <script>
+      // Dark is the default. Only visitors who chose light with the sun/moon button get light.
+      (function () {
+        if (localStorage.getItem('theme') === 'light') {
+          document.documentElement.classList.remove('dark');
+          document.querySelector('meta[name=theme-color]').content = '#EEF1F6';
+        }
+      })();
+    </script>
+    <title>Free Chat Rooms – Chat with Strangers, No Registration | ChatNow</title>
+    <meta name="description" content="Free anonymous chat. No sign-up, no app. Chat one-to-one with people from Sri Lanka and around the world. 18+ only." />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <!-- SEO: replace yoursite.lk with your real domain in this file, robots.txt, sitemap.xml and the info pages -->
+    <link rel="canonical" href="https://yoursite.lk/" />
+
+    <!-- icons + install -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- link previews (WhatsApp, Facebook, X, Telegram…) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ChatNow" />
+    <meta property="og:title" content="ChatNow – Free Chat with Strangers. No sign-up. No app." />
+    <meta property="og:description" content="Free anonymous one-to-one chat with people from Sri Lanka and around the world. Nothing is stored. 18+ only." />
+    <meta property="og:url" content="https://yoursite.lk/" />
+    <meta property="og:image" content="https://yoursite.lk/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="ChatNow – Free chat with strangers. No sign-up. No app." />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ChatNow – Free Chat with Strangers" />
+    <meta name="twitter:description" content="Free anonymous one-to-one chat. No sign-up, no app. 18+ only." />
+    <meta name="twitter:image" content="https://yoursite.lk/og-image.png" />
+
+    <!-- structured data for Google (the FAQ text must match the FAQ shown on the page) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://yoursite.lk/#website",
+            "url": "https://yoursite.lk/",
+            "name": "ChatNow",
+            "description": "Free anonymous one-to-one chat. No sign-up, no app. 18+ only.",
+            "inLanguage": "en"
+          },
+          {
+            "@type": "WebApplication",
+            "name": "ChatNow",
+            "url": "https://yoursite.lk/",
+            "applicationCategory": "CommunicationApplication",
+            "operatingSystem": "Any (web browser)",
+            "browserRequirements": "Requires a modern web browser",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              { "@type": "Question", "name": "Is ChatNow really free?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. ChatNow is always free and supported by ads. There is no sign-up and no app to install." } },
+              { "@type": "Question", "name": "Do I need to register?", "acceptedAnswer": { "@type": "Answer", "text": "No. Just pick a nickname, your gender and age, and start chatting. Your country is detected automatically." } },
+              { "@type": "Question", "name": "Are my chats saved?", "acceptedAnswer": { "@type": "Answer", "text": "No. Every message is permanently deleted when you log out, after 5 minutes of inactivity, or 2 minutes after you close the tab. Only a conversation that someone reports is kept for 7 days so a moderator can review it. To stop abuse we keep a sign-in record (time, IP address, device ID, nickname, gender, age and country, never messages) for 1 year." } },
+              { "@type": "Question", "name": "Who can use ChatNow?", "acceptedAnswer": { "@type": "Answer", "text": "Adults only. You must be 18 or older to chat." } },
+              { "@type": "Question", "name": "What if someone bothers me?", "acceptedAnswer": { "@type": "Answer", "text": "Use Block to stop them messaging you, or Report to send the conversation to a moderator. Every report is reviewed by a human, and we never ban by IP address." } },
+              { "@type": "Question", "name": "Does it work on my phone?", "acceptedAnswer": { "@type": "Answer", "text": "Yes. ChatNow works in any modern phone or computer browser." } }
+            ]
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

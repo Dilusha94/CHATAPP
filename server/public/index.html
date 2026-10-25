@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#100B09"><title>ChatNow Admin</title>
+<style>
+@font-face{font-family:Jakarta;src:url(fonts/jakarta.woff2) format('woff2');font-weight:200 800;font-display:swap}
+:root{
+  --fg:#F6F1ED;--fg-muted:#BBB0A9;--fg-subtle:#80766F;--line:rgb(255 255 255/.08);
+  --surface:rgb(255 255 255/.045);--surface-2:rgb(255 255 255/.06);--hover:rgb(255 255 255/.10);
+  --accent:#FF9F5C;--bar:#E8501A;--ok:#2FBF71;--danger:#F0534A;
+  --grad:linear-gradient(135deg,#FFA048 0%,#F2552A 52%,#CF2E1C 100%);--grad-shadow:rgb(242 85 42/.55);
+  color-scheme:dark
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{margin:0;font:14px/1.5 Jakarta,ui-sans-serif,system-ui,sans-serif;letter-spacing:-.006em;color:var(--fg);-webkit-font-smoothing:antialiased;
+  background:radial-gradient(60% 45% at 8% -6%,rgb(255 106 40/.30),transparent 70%),radial-gradient(45% 38% at 96% 4%,rgb(255 170 80/.12),transparent 70%),
+  radial-gradient(60% 45% at 55% 112%,rgb(170 36 72/.22),transparent 70%),linear-gradient(180deg,#100B09,#0A0706) fixed}
+h1,h2,h3{margin:0;letter-spacing:-.02em}
+.muted{color:var(--fg-subtle)}
+[hidden]{display:none!important}
+
+/* glass */
+.glass{background:linear-gradient(160deg,rgb(255 255 255/.065),rgb(255 255 255/.02)) padding-box,
+  linear-gradient(160deg,rgb(255 255 255/.22),rgb(255 255 255/.04) 42%,rgb(255 140 70/.22)) border-box;
+  border:1px solid transparent;border-radius:24px;backdrop-filter:blur(24px) saturate(150%);-webkit-backdrop-filter:blur(24px) saturate(150%);
+  box-shadow:0 24px 60px -30px rgb(0 0 0/.9),inset 0 1px 0 rgb(255 255 255/.06)}
+.card{padding:20px;margin-bottom:14px}
+
+/* controls */
+button{font:inherit;cursor:pointer;border:0;color:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:999px;padding:9px 16px;font-weight:600;font-size:13px;transition:.2s}
+.btn-primary{color:#fff;background:radial-gradient(60% 80% at 50% 130%,rgb(255 200 120/.45),transparent 70%),var(--grad);box-shadow:inset 0 1px 0 rgb(255 255 255/.3),0 12px 26px -12px var(--grad-shadow)}
+.btn-primary:hover{filter:brightness(1.07);transform:translateY(-1px)}
+.btn-ghost{background:var(--surface-2);border:1px solid var(--line);color:var(--fg-muted)}.btn-ghost:hover{background:var(--hover);color:var(--fg)}
+.btn-danger{background:rgb(240 83 74/.12);border:1px solid rgb(240 83 74/.35);color:#FF8B84}.btn-danger:hover{background:rgb(240 83 74/.2);color:#fff}
+.field{font:inherit;width:100%;color:var(--fg);background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:11px 14px;outline:none;transition:.2s}
+.field::placeholder{color:var(--fg-subtle)}.field:hover{border-color:rgb(255 255 255/.18)}
+.field:focus{border-color:rgb(222 74 19/.65);box-shadow:0 0 0 4px rgb(222 74 19/.14);background:rgb(255 255 255/.09)}
+.eyebrow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.18em;color:var(--accent)}
+.logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-.02em}
+.logo-mark{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--grad);box-shadow:0 8px 20px -8px var(--grad-shadow)}
+.logo small{font-weight:600;font-size:11px;padding:3px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);color:var(--fg-muted);letter-spacing:.06em;text-transform:uppercase}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* sign-in screen */
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:24px;position:relative;overflow:hidden}
+.shape{position:absolute;pointer-events:none;background:var(--grad)}
+.login{position:relative;width:100%;max-width:400px;padding:32px}
+.login h1{font-size:28px;margin:6px 0 4px}.login p{color:var(--fg-subtle);margin:0 0 22px}
+.login .btn{width:100%;padding:14px;font-size:15px;margin-top:14px}
+.err{margin-top:12px;padding:10px 14px;border-radius:14px;background:rgb(240 83 74/.12);border:1px solid rgb(240 83 74/.3);color:#FFB1AB;font-size:13px}
+
+/* app shell */
+header{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:14px;padding:12px 20px;flex-wrap:wrap;
+  background:rgb(10 7 6/.55);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--line)}
+header .logo{margin-right:auto}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none}nav.tabs::-webkit-scrollbar{display:none}
+nav.tabs button{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;font-size:13px;font-weight:600;color:var(--fg-muted);background:transparent;white-space:nowrap}
+nav.tabs button:hover{background:var(--hover);color:var(--fg)}
+nav.tabs button.on{color:#fff;background:var(--grad);box-shadow:0 8px 20px -10px var(--grad-shadow)}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:12px;color:var(--fg-muted);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 10px var(--ok)}
+.icon-btn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);color:var(--fg-muted)}
+.icon-btn:hover{background:var(--hover);color:var(--fg);border-color:rgb(255 160 90/.35)}
+main{max-width:1120px;margin:0 auto;padding:24px 20px 48px}
+.page-title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.page-title h2{font-size:26px}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}.row h3{margin-right:auto;font-size:15px}
+
+/* stats */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:14px}
+.kpi{padding:18px 20px}
+.kpi .label{display:flex;align-items:center;gap:8px;color:var(--fg-muted);font-size:13px;font-weight:500}
+.kpi .label span{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);color:var(--accent)}
+.kpi .value{font-size:34px;font-weight:700;letter-spacing:-.03em;margin:10px 0 2px}
+.kpi .sub{color:var(--fg-subtle);font-size:12px}
+.seg{display:inline-flex;gap:2px;padding:3px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line)}
+.seg button{padding:6px 12px;border-radius:999px;font-size:12px;font-weight:600;color:var(--fg-muted);background:transparent}
+.seg button.on{color:#fff;background:var(--grad)}
+.chart{position:relative;margin-top:12px}.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--fg-subtle);font-size:11px;font-family:inherit;font-variant-numeric:tabular-nums}
+.chart .grid{stroke:var(--line);stroke-width:1}
+.chart .bar{fill:var(--bar)}.chart .hit{fill:transparent;outline:none}.chart .hit:hover+.hl,.chart .hit:focus+.hl{opacity:1}
+.chart .hl{fill:rgb(255 255 255/.05);opacity:0;pointer-events:none}.chart .val{fill:var(--fg);font-weight:600}
+.tip{position:absolute;pointer-events:none;background:#F6F1ED;color:#1A1311;border-radius:12px;padding:8px 12px;font-size:12px;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-10px;display:none;z-index:2;box-shadow:0 12px 30px -10px rgb(0 0 0/.7)}
+.tip b{display:block;margin-bottom:2px}
+.hbar{display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:center;padding:7px 0}
+.hbar .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-muted)}
+.hbar .track{display:flex;align-items:center;gap:10px}.hbar .fill{height:12px;border-radius:0 4px 4px 0;background:var(--bar);min-width:2px}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+.table-wrap{overflow-x:auto;margin:6px -4px 0}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--fg-subtle);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.pager-row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--line);font-size:12px}
+.pager-row:empty{display:none}
+.pager{display:inline-flex;align-items:center;gap:4px}
+.pg{min-width:32px;height:32px;padding:0 10px;border-radius:999px;font-size:13px;font-weight:600;color:var(--fg-muted);background:var(--surface-2);border:1px solid var(--line);font-variant-numeric:tabular-nums}
+.pg:hover:not(:disabled):not(.on){background:var(--hover);color:var(--fg)}
+.pg.on{color:#fff;background:var(--grad);border-color:transparent;box-shadow:0 6px 16px -8px var(--grad-shadow)}
+.pg:disabled{opacity:.35;cursor:not-allowed}
+.pg-gap{color:var(--fg-subtle);padding:0 2px}tbody tr:hover td{background:rgb(255 255 255/.025)}
+
+/* reports */
+.report{padding:20px}
+.report-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600;background:rgb(240 83 74/.12);border:1px solid rgb(240 83 74/.3);color:#FFB1AB}
+.chip.neutral{background:var(--surface-2);border-color:var(--line);color:var(--fg-muted)}
+.people{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:14px 0}
+.person{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line)}
+.avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:13px;flex-shrink:0;background:var(--surface-2);border:2px solid rgb(255 255 255/.15);color:var(--fg)}
+.person .role{font-size:11px;color:var(--fg-subtle);text-transform:uppercase;letter-spacing:.08em}
+.person .who{font-weight:600}.person .meta{font-size:12px;color:var(--fg-subtle);word-break:break-all}
+.msgs{max-height:260px;overflow:auto;border-radius:16px;background:rgb(0 0 0/.25);border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:6px}
+.msg{align-self:flex-start;max-width:85%;padding:8px 12px;border-radius:16px;background:var(--surface-2);border:1px solid var(--line);font-size:13px}
+.msg b{display:block;font-size:11px;color:var(--fg-subtle);margin-bottom:1px}
+.msg.flagged{align-self:flex-end;background:rgb(240 83 74/.12);border-color:rgb(240 83 74/.3)}.msg.flagged b{color:#FFB1AB}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.empty{text-align:center;padding:40px 20px;color:var(--fg-subtle)}.empty .big{font-size:32px;margin-bottom:6px}
+.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:14px}.toolbar .field{max-width:340px}
+.form-grid{display:grid;grid-template-columns:2fr 2fr 1fr;gap:12px;margin:14px 0}
+.form-grid label{display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500}
+@media (max-width:720px){nav.tabs{order:3;width:100%;margin:0 -4px}.form-grid{grid-template-columns:1fr}header{padding:12px 14px}main{padding:18px 14px 40px}.hbar{grid-template-columns:110px 1fr}#status{display:none}}
+
+/* previous activity */
+.hist{margin-top:14px}
+.hist-box{border-radius:18px;background:rgb(0 0 0/.2);border:1px solid var(--line);padding:14px 16px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip.warn{background:rgb(245 158 11/.12);border-color:rgb(245 158 11/.35);color:#FCD34D}
+.kv{display:grid;grid-template-columns:96px 1fr;gap:10px;padding:6px 0;font-size:13px;border-top:1px solid var(--line)}
+.kv>span:first-child{color:var(--fg-subtle);font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding-top:2px}
+.hist-box .table-wrap{margin:8px 0 0}.hist-box td,.hist-box th{padding:8px 10px;font-size:12.5px}
+
+/* ads tab */
+.ad-card{padding:20px;margin-bottom:14px}
+.ad-head{display:flex;align-items:center;gap:14px}
+.ad-head .ico{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);color:var(--accent);flex-shrink:0}
+.ad-head h3{font-size:15px}.ad-head p{margin:2px 0 0;font-size:12.5px;color:var(--fg-subtle)}
+.ad-head .state{margin-left:auto;font-size:12px;font-weight:600;color:var(--fg-subtle);white-space:nowrap}
+.ad-head .state.on{color:var(--ok)}
+.switch{position:relative;width:46px;height:26px;flex-shrink:0;cursor:pointer}
+.switch input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.switch span{position:absolute;inset:0;border-radius:999px;background:rgb(255 255 255/.12);border:1px solid var(--line);transition:.2s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 2px 6px rgb(0 0 0/.4)}
+.switch input:checked+span{background:var(--grad);border-color:transparent}
+.switch input:checked+span::after{transform:translateX(20px)}
+.switch input:focus-visible+span{box-shadow:0 0 0 4px rgb(222 74 19/.25)}
+.ad-fields{display:grid;gap:12px;margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.ad-fields.cols{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.ad-fields label{display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500}
+.ad-fields .hint{font-size:11.5px;color:var(--fg-subtle);margin-top:5px}
+.save-bar{position:sticky;bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;margin-top:4px;flex-wrap:wrap}
+
+/* modal */
+.modal-bg{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:rgb(0 0 0/.6);backdrop-filter:blur(6px)}
+.modal{width:100%;max-width:420px;padding:24px;animation:modal-in .18s cubic-bezier(.2,.8,.2,1)}
+@keyframes modal-in{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:50;display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:500;
+  background:rgb(20 15 13/.9);border:1px solid var(--line);backdrop-filter:blur(16px);box-shadow:0 16px 40px -14px rgb(0 0 0/.9)}
+</style></head><body>
+
+<!-- ============ sign in ============ -->
+<div class="login-wrap" id="login" hidden>
+  <div class="shape" style="width:190px;height:190px;border-radius:48px;left:calc(50% - 250px);top:calc(50% - 230px)"></div>
+  <div class="shape" style="width:120px;height:120px;border-radius:50%;left:calc(50% + 150px);top:calc(50% + 40px);opacity:.9"></div>
+  <form class="glass login" onsubmit="event.preventDefault(); signIn()">
+    <div class="logo"><span class="logo-mark"><svg class="i" viewBox="0 0 24 24" style="color:#fff"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span>ChatNow<small>Admin</small></div>
+    <div style="margin-top:26px" class="eyebrow">Owner area</div>
+    <h1>Sign in</h1>
+    <p>Enter the <b style="color:var(--fg)">ADMIN_TOKEN</b> from <code>server/.env</code>.</p>
+    <input class="field" id="tok" type="password" placeholder="Admin token" autocomplete="current-password" autofocus>
+    <div class="err" id="loginErr" hidden>That token is not correct.</div>
+    <button class="btn btn-primary" type="submit">Sign in
+      <svg class="i" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+  </form>
+</div>
+
+<!-- ============ app ============ -->
+<div id="app" hidden>
+<header>
+  <div class="logo"><span class="logo-mark"><svg class="i" viewBox="0 0 24 24" style="color:#fff"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span>ChatNow<small>Admin</small></div>
+  <nav class="tabs">
+    <button data-t="statsTab" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15v2M11 11v6M15 7v10M19 12v5"/></svg>Stats</button>
+    <button data-t="reports"><svg class="i" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>Reports <span id="reportCount"></span></button>
+    <button data-t="users"><svg class="i" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Online users</button>
+    <button data-t="adsTab"><svg class="i" viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>Ads</button>
+    <button data-t="tools"><svg class="i" viewBox="0 0 24 24"><path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zM4.9 4.9l14.2 14.2"/></svg>Ban tools</button>
+  </nav>
+  <span class="pill" id="status"><span class="dot"></span><span id="stats">…</span></span>
+  <button class="icon-btn" title="Sign out" onclick="signOut()"><svg class="i" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></button>
+</header>
+
+<main>
+  <section id="statsTab">
+    <div class="page-title"><div><div class="eyebrow">Overview</div><h2>Stats</h2></div>
+      <span class="seg" id="range"><button data-d="7">7 days</button><button data-d="30" class="on">30 days</button><button data-d="90">90 days</button></span></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="glass card">
+      <div class="row"><h3 id="chartTitle">Unique visitors per day</h3></div>
+      <div class="chart" id="chart"><div class="tip" id="tip"></div></div>
+    </div>
+    <div class="glass card"><div class="row"><h3 id="countriesTitle">Top countries</h3></div><div id="countries"></div></div>
+    <div class="glass card"><div class="row"><h3>Day by day</h3></div><div class="table-wrap" id="dailyTable"></div>
+      <div class="pager-row" id="dailyPager"></div>
+      <p class="muted" id="statsNote" style="margin:12px 0 0;font-size:12px"></p></div>
+  </section>
+
+  <section id="reports" hidden>
+    <div class="page-title"><div><div class="eyebrow">Moderation</div><h2>Reports</h2></div></div>
+    <div id="reportList"></div>
+  </section>
+
+  <section id="users" hidden>
+    <div class="page-title"><div><div class="eyebrow">Live</div><h2>Online users</h2></div></div>
+    <div class="toolbar"><input class="field" id="q" placeholder="Filter by nickname" oninput="loadUsers()"></div>
+    <div id="ulist"></div>
+  </section>
+
+  <section id="adsTab" hidden>
+    <div class="page-title"><div><div class="eyebrow">Monetisation</div><h2>Ads</h2></div>
+      <span class="pill" id="adsLive"><span class="dot"></span>Changes go live instantly</span></div>
+    <p class="muted" style="margin:-6px 0 16px">Turn each Adsterra ad type on or off and paste its code. Everyone on the site gets the change within a second, no redeploy needed. You can paste the whole code Adsterra gives you; the key or URL is picked out automatically.</p>
+    <form id="adsForm" onsubmit="event.preventDefault(); saveAds()">
+      <div class="glass ad-card">
+        <div class="ad-head"><span class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M3 5h18v14H3zM7 9h10M7 13h6"/></svg></span>
+          <div><h3>Banners</h3><p>300×250, 728×90 and 320×50 banners on the landing page, lists and chats.</p></div>
+          <span class="state" data-state="banners"></span><label class="switch"><input type="checkbox" id="ad-banners-on"><span></span></label></div>
+        <div class="ad-fields cols">
+          <div><label for="ad-b-320">320×50 key</label><input class="field" id="ad-b-320" placeholder="key or banner code"></div>
+          <div><label for="ad-b-300">300×250 key</label><input class="field" id="ad-b-300" placeholder="key or banner code"></div>
+          <div><label for="ad-b-728">728×90 key</label><input class="field" id="ad-b-728" placeholder="key or banner code"></div>
+          <div><label for="ad-b-domain">Ad domain</label><input class="field" id="ad-b-domain" placeholder="www.highperformanceformat.com">
+            <div class="hint">From the banner code: <code>//DOMAIN/KEY/invoke.js</code></div></div>
+        </div>
+      </div>
+      <div class="glass ad-card">
+        <div class="ad-head"><span class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg></span>
+          <div><h3>Direct link</h3><p>Opens in a new tab on every Nth message a user sends. The message is still sent.</p></div>
+          <span class="state" data-state="directLink"></span><label class="switch"><input type="checkbox" id="ad-dl-on"><span></span></label></div>
+        <div class="ad-fields cols">
+          <div style="grid-column:span 2"><label for="ad-dl-url">Direct link URL</label><input class="field" id="ad-dl-url" placeholder="https://…"></div>
+          <div><label for="ad-dl-every">Every Nth message</label><input class="field" id="ad-dl-every" type="number" min="1" max="500"></div>
+        </div>
+      </div>
+      <div class="glass ad-card">
+        <div class="ad-head"><span class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M4 4h12v12H4zM8 20h12V8"/></svg></span>
+          <div><h3>Popunder</h3><p>Loaded a few minutes after sign-in; opens behind the page on the user's next click.</p></div>
+          <span class="state" data-state="popunder"></span><label class="switch"><input type="checkbox" id="ad-pu-on"><span></span></label></div>
+        <div class="ad-fields cols">
+          <div style="grid-column:span 2"><label for="ad-pu-src">Popunder script</label><input class="field" id="ad-pu-src" placeholder="&lt;script src=&quot;//…js&quot;&gt;&lt;/script&gt; or https://…js"></div>
+          <div><label for="ad-pu-delay">Minutes after sign-in</label><input class="field" id="ad-pu-delay" type="number" min="0" max="120" step="0.5"></div>
+        </div>
+      </div>
+      <div class="glass ad-card">
+        <div class="ad-head"><span class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12zM8 11h8"/></svg></span>
+          <div><h3>Social bar</h3><p>Floating notification-style ad, shown to signed-in users.</p></div>
+          <span class="state" data-state="socialBar"></span><label class="switch"><input type="checkbox" id="ad-sb-on"><span></span></label></div>
+        <div class="ad-fields">
+          <div><label for="ad-sb-src">Social bar script</label><input class="field" id="ad-sb-src" placeholder="&lt;script src=&quot;//…js&quot;&gt;&lt;/script&gt; or https://…js"></div>
+        </div>
+      </div>
+      <div class="glass save-bar"><span class="muted" id="adsMsg" style="font-size:13px">Turning an ad off stops it for new pages right away; a popunder or social bar already showing goes away on the user's next page load.</span>
+        <button class="btn btn-primary" type="submit">Save changes</button></div>
+    </form>
+  </section>
+
+  <section id="tools" hidden>
+    <div class="page-title"><div><div class="eyebrow">Moderation</div><h2>Ban tools</h2></div></div>
+    <form class="glass card" onsubmit="event.preventDefault()">
+      <h3>Ban or unban a device</h3>
+      <p class="muted" style="margin:4px 0 0">Bans are per device, never by IP. The user sees the reason and the end time.</p>
+      <div class="form-grid">
+        <div><label for="dev">Device ID</label><input class="field" id="dev" placeholder="e.g. 3f9c…"></div>
+        <div><label for="reason">Reason shown to the user</label><input class="field" id="reason" placeholder="Spam or advertising"></div>
+        <div><label for="hours">Hours</label><input class="field" id="hours" type="number" value="24" min="1"></div>
+      </div>
+      <div class="actions"><button class="btn btn-danger" onclick="ban(dev.value, reason.value, hours.value)">Ban device</button>
+        <button class="btn btn-ghost" onclick="unban(dev.value)">Unban</button></div>
+    </form>
+  </section>
+</main>
+</div>
+
+<script>
+let token = sessionStorage.getItem('adminToken') || '';
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const countryName = (() => { try { const dn = new Intl.DisplayNames(['en'], { type: 'region' }); return c => (c && dn.of(c)) || c; } catch { return c => c; } })();
+const initial = n => esc(String(n || '?').slice(0, 1).toUpperCase());
+
+function lock(wrong) { $('app').hidden = true; $('login').hidden = false; $('loginErr').hidden = !wrong; $('tok').focus(); }
+function unlock() { $('login').hidden = true; $('app').hidden = false; }
+async function api(path, opts = {}) {
+  const r = await fetch('/admin/api' + path, { ...opts, headers: { 'content-type': 'application/json', 'x-admin-token': token } });
+  if (r.status === 401) { lock(!!token); throw new Error('unauthorized'); }
+  return r.json();
+}
+function signIn() { token = $('tok').value.trim(); sessionStorage.setItem('adminToken', token); refresh(); }
+function signOut() { token = ''; sessionStorage.removeItem('adminToken'); $('tok').value = ''; lock(false); }
+function toast(text) {
+  const t = Object.assign(document.createElement('div'), { className: 'toast', innerHTML: `<span class="dot"></span>${esc(text)}` });
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  ['statsTab', 'reports', 'users', 'adsTab', 'tools'].forEach(t => $(t).hidden = t !== b.dataset.t);
+  refresh();
+});
+
+async function loadStats() {
+  const s = await api('/stats');
+  unlock();
+  $('stats').textContent = `${s.online} online · ${s.rssMB} MB · up ${Math.round(s.uptimeSec / 3600)}h`;
+}
+
+// ---------- reports ----------
+async function loadReports() {
+  const list = await api('/reports');
+  window.R = Object.fromEntries(list.map(r => [r.id, r]));
+  $('reportCount').innerHTML = list.length ? `<span class="chip" style="padding:1px 7px">${list.length}</span>` : '';
+  $('reportList').innerHTML = list.length ? list.map(r => `
+    <div class="glass report">
+      <div class="report-head"><span class="chip">${esc(r.reason)}</span>
+        ${r.group ? `<span class="chip neutral">Group: ${esc(r.group.name)}</span>` : '<span class="chip neutral">Private chat</span>'}
+        <span class="muted" style="margin-left:auto;font-size:12px">${new Date(r.ts).toLocaleString()}</span></div>
+      <div class="people">
+        <div class="person"><span class="avatar">${initial(r.reported.nick)}</span><div><div class="role">Reported</div>
+          <div class="who">${esc(r.reported.nick)} <span class="muted" style="font-weight:400">· ${esc(r.reported.age)} · ${esc(countryName(r.reported.country))}</span></div>
+          <div class="meta">IP ${esc(r.reported.ip || 'unknown')} · device ${esc(r.reported.deviceId)}</div></div></div>
+        <div class="person"><span class="avatar">${initial(r.reporter.nick)}</span><div><div class="role">Reported by</div><div class="who">${esc(r.reporter.nick)}</div></div></div>
+      </div>
+      <div class="msgs">${r.messages.map(m => {
+        const nick = m.fromUser?.nick || (m.from === r.reporter.id ? r.reporter.nick : r.reported.nick);
+        return `<div class="msg ${m.from === r.reported.id ? 'flagged' : ''}"><b>${esc(nick)}${m.from === r.reported.id ? ' ⚑' : ''}</b>${esc(m.text)}</div>`;
+      }).join('') || '<span class="muted">No messages</span>'}</div>
+      <div class="hist" id="hist-${r.id}"><span class="muted">Loading previous activity…</span></div>
+      <div class="actions"><button class="btn btn-danger" onclick="banReport('${r.id}',24)">Ban 24h</button>
+        <button class="btn btn-danger" onclick="banReport('${r.id}',168)">Ban 7 days</button>
+        <button class="btn btn-ghost" onclick="dismiss('${r.id}')">Dismiss</button></div>
+    </div>`).join('<div style="height:14px"></div>') : '<div class="glass empty"><div class="big">🎉</div>No open reports</div>';
+  for (const r of list) {
+    api(`/history?device=${encodeURIComponent(r.reported.deviceId)}&ip=${encodeURIComponent(r.reported.ip || '')}`)
+      .then(h => { const el = $('hist-' + r.id); if (el) el.innerHTML = renderHistory(h); })
+      .catch(() => { const el = $('hist-' + r.id); if (el) el.innerHTML = '<span class="muted">Could not load previous activity.</span>'; });
+  }
+}
+
+// ---------- previous activity (1-year history of a device / IP) ----------
+const shortDate = d => new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function browserOf(ua = '') {
+  const os = /Android/i.test(ua) ? 'Android' : /iPhone|iPad/i.test(ua) ? 'iPhone' : /Windows/i.test(ua) ? 'Windows' : /Mac OS/i.test(ua) ? 'Mac' : /Linux/i.test(ua) ? 'Linux' : '';
+  const br = /Edg\//.test(ua) ? 'Edge' : /OPR\/|Opera/.test(ua) ? 'Opera' : /SamsungBrowser/.test(ua) ? 'Samsung' : /Firefox\//.test(ua) ? 'Firefox' : /Chrome\//.test(ua) ? 'Chrome' : /Safari\//.test(ua) ? 'Safari' : '';
+  return [br, os].filter(Boolean).join(' · ') || '—';
+}
+function duration(s) {
+  if (!s.ended_at) return '<span class="dot" style="display:inline-block;vertical-align:middle"></span> online';
+  const min = Math.max(1, Math.round((new Date(s.ended_at) - new Date(s.started_at)) / 60000));
+  const how = { logout: 'logged out', idle: 'idle', disconnected: 'left', banned: 'banned', kicked: 'kicked' }[s.end_reason] || s.end_reason || '';
+  return `${min < 60 ? min + ' min' : (min / 60).toFixed(1) + ' h'}${how ? ` · ${esc(how)}` : ''}`;
+}
+function renderHistory(h) {
+  if (!h || !h.available) return '<span class="muted">History is not available (database not connected).</span>';
+  const s = h.summary;
+  if (!s.sessions && !s.reports && !s.bans) return '<span class="muted">No earlier activity on record.</span>';
+  const chip = (text, level = 'neutral') => `<span class="chip ${level}">${text}</span>`; // level '' = red
+  const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const chips = [
+    chip(`${plural(s.sessions, 'sign-in')}${s.firstSeen ? ` since ${new Date(s.firstSeen).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : ''}`),
+    chip(plural(s.nicks.length, 'nickname'), s.nicks.length >= 3 ? 'warn' : 'neutral'),
+    s.genders.length > 1 ? chip('Changed gender', 'warn') : '',
+    s.countries.length > 1 ? chip(`${s.countries.length} countries · possible VPN`, 'warn') : '',
+    chip(plural(s.ips.length, 'IP')),
+    s.reports ? chip(`Reported ${s.reports}×`, s.reports > 1 ? '' : 'warn') : '',
+    s.bans ? chip(`Banned ${s.bans}× before`, '') : '',
+    s.otherDevicesOnSameIp ? chip(`${plural(s.otherDevicesOnSameIp, 'other device')} on same IP`, 'neutral') : '',
+  ].join('');
+  const list = (label, items) => items.length ? `<div class="kv"><span>${label}</span><span>${items.join(', ')}</span></div>` : '';
+  const rows = h.sessions.map(x => `<tr><td style="white-space:nowrap">${shortDate(x.started_at)}</td><td>${esc(x.nick)}</td><td>${x.gender === 'f' ? 'Female' : 'Male'} · ${esc(x.age)}</td>
+    <td>${esc(countryName(x.country))}</td><td style="font-family:ui-monospace,monospace;font-size:12px">${esc(x.ip || '—')}</td><td>${esc(browserOf(x.user_agent))}</td><td style="white-space:nowrap">${duration(x)}</td></tr>`);
+  const id = 'h' + Math.random().toString(36).slice(2, 8);
+  return `<div class="hist-box">
+    <div class="row" style="margin-bottom:10px"><h3 style="font-size:14px">Previous activity · last ${Math.round(h.keepDays / 30.4)} months</h3></div>
+    <div class="chips">${chips}</div>
+    ${list('Nicknames', s.nicks.map(esc))}${list('Countries', s.countries.map(c => esc(countryName(c))))}${list('IPs', s.ips.map(esc))}
+    ${rows.length ? `<div class="table-wrap"><table><thead><tr><th>Signed in</th><th>Nickname</th><th>Gender · age</th><th>Country</th><th>IP</th><th>Browser</th><th>Stayed</th></tr></thead>
+      <tbody>${rows.slice(0, 5).join('')}</tbody><tbody id="${id}" hidden>${rows.slice(5).join('')}</tbody></table></div>
+      ${rows.length > 5 ? `<button class="btn btn-ghost" style="margin-top:8px" onclick="document.getElementById('${id}').hidden=false;this.remove()">Show all ${rows.length} sign-ins</button>` : ''}` : ''}
+    ${h.reports.length ? `<div class="kv"><span>Reports</span><span>${h.reports.slice(0, 5).map(x => `${esc(x.reason)} <span class="muted">(by ${esc(x.reporter_nick)}, ${new Date(x.created_at).toLocaleDateString()})</span>`).join('<br>')}</span></div>` : ''}
+    ${h.bans.length ? `<div class="kv"><span>Bans</span><span>${h.bans.slice(0, 5).map(x => x.action === 'ban' ? `Banned ${x.hours >= 24 ? Math.round(x.hours / 24) + 'd' : x.hours + 'h'}: ${esc(x.reason)} <span class="muted">(${new Date(x.created_at).toLocaleDateString()})</span>` : `Unbanned <span class="muted">(${new Date(x.created_at).toLocaleDateString()})</span>`).join('<br>')}</span></div>` : ''}
+    ${h.sharedIp.length ? `<div class="kv"><span>Same IP</span><span>${h.sharedIp.slice(0, 6).map(x => `${x.nicks.map(esc).join(', ')} <span class="muted">(${esc(x.ip)}, ${plural(x.sessions, 'sign-in')})</span>`).join('<br>')}
+      <br><span class="muted" style="font-size:11px">Mobile networks share IPs between many people: treat this as a hint, not proof.</span></span></div>` : ''}
+  </div>`;
+}
+async function showHistory(id) {
+  const u = window.U[id];
+  const wrap = Object.assign(document.createElement('div'), { className: 'modal-bg' });
+  wrap.innerHTML = `<div class="glass modal" style="max-width:900px;max-height:88vh;overflow:auto" role="dialog" aria-modal="true">
+    <div class="row"><h3>${esc(u.nick)} <span class="muted" style="font-weight:400;font-size:13px">· IP ${esc(u.ip || 'unknown')}</span></h3>
+      <button class="icon-btn" data-x title="Close">✕</button></div><div id="mHist"><span class="muted">Loading…</span></div></div>`;
+  const done = () => { wrap.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = e => { if (e.key === 'Escape') done(); };
+  wrap.onclick = e => { if (e.target === wrap || e.target.closest('[data-x]')) done(); };
+  document.addEventListener('keydown', onKey);
+  document.body.appendChild(wrap);
+  const h = await api(`/history?device=${encodeURIComponent(u.deviceId)}&ip=${encodeURIComponent(u.ip || '')}`).catch(() => null);
+  wrap.querySelector('#mHist').innerHTML = renderHistory(h);
+}
+
+// ---------- online users ----------
+async function loadUsers() {
+  const list = await api('/users?q=' + encodeURIComponent($('q').value));
+  window.U = Object.fromEntries(list.map(u => [u.id, u]));
+  $('ulist').innerHTML = list.length ? `<div class="glass card" style="padding:8px 12px"><div class="table-wrap"><table>
+    <thead><tr><th>Nickname</th><th>Age</th><th>Country</th><th>IP</th><th class="num">Idle</th><th></th></tr></thead><tbody>${list.map(u => `
+    <tr><td><span style="display:inline-flex;align-items:center;gap:10px"><span class="avatar" style="width:30px;height:30px;font-size:12px">${initial(u.nick)}</span>
+      <span>${esc(u.nick)}${u.visible ? '' : ' <span class="muted">(hidden)</span>'}</span></span></td>
+      <td>${u.age}</td><td>${esc(countryName(u.country))}</td><td style="font-family:ui-monospace,monospace;font-size:12px">${esc(u.ip || '—')}</td><td class="num">${u.idleSec}s</td>
+      <td class="num" style="white-space:nowrap"><button class="btn btn-ghost" onclick="showHistory('${u.id}')">History</button>
+        <button class="btn btn-ghost" onclick="kick('${u.id}')">Kick</button>
+        <button class="btn btn-danger" onclick="banUser('${u.id}')">Ban 24h</button></td></tr>`).join('')}
+    </tbody></table></div></div>` : '<div class="glass empty">Nobody online right now</div>';
+}
+
+async function ban(deviceId, reason, hours, reportId) {
+  if (!deviceId || !reason) return;
+  await api('/ban', { method: 'POST', body: JSON.stringify({ deviceId, reason, hours: Number(hours) }) });
+  if (reportId) await api('/reports/' + reportId, { method: 'DELETE' });
+  toast('Device banned');
+  refresh();
+}
+// In-app dialog asking for the ban reason (instead of the browser's prompt())
+function askReason(nick) {
+  return new Promise(resolve => {
+    const wrap = Object.assign(document.createElement('div'), { className: 'modal-bg' });
+    wrap.innerHTML = `<form class="glass modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <h3 id="mTitle">Ban ${esc(nick)} for 24 hours?</h3>
+      <p class="muted" style="margin:6px 0 14px">They are signed out now, and this reason is shown to them when they try to come back.</p>
+      <label for="mReason" style="display:block;font-size:12px;color:var(--fg-muted);margin-bottom:6px;font-weight:500">Reason</label>
+      <input class="field" id="mReason" value="Rule violation" maxlength="200">
+      <div class="actions" style="justify-content:flex-end;margin-top:18px">
+        <button type="button" class="btn btn-ghost" data-x>Cancel</button><button class="btn btn-danger" type="submit">Ban 24h</button></div></form>`;
+    const done = v => { wrap.remove(); document.removeEventListener('keydown', onKey); resolve(v); };
+    const onKey = e => { if (e.key === 'Escape') done(null); };
+    wrap.onclick = e => { if (e.target === wrap || e.target.hasAttribute('data-x')) done(null); };
+    wrap.querySelector('form').onsubmit = e => { e.preventDefault(); done(wrap.querySelector('#mReason').value.trim() || 'Rule violation'); };
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(wrap);
+    wrap.querySelector('#mReason').select();
+  });
+}
+async function banUser(id) {
+  const u = window.U[id];
+  const reason = await askReason(u.nick);
+  if (reason) ban(u.deviceId, reason, 24);
+}
+function banReport(id, hours) { const r = window.R[id]; ban(r.reported.deviceId, r.reason, hours, id); }
+async function unban(deviceId) { if (!deviceId) return; await api('/unban', { method: 'POST', body: JSON.stringify({ deviceId }) }); toast('Device unbanned'); }
+async function kick(userId) { await api('/kick', { method: 'POST', body: JSON.stringify({ userId }) }); toast('User removed'); refresh(); }
+async function dismiss(id) { await api('/reports/' + id, { method: 'DELETE' }); toast('Report dismissed'); refresh(); }
+
+// ---------- ads ----------
+let adsDirty = false; // don't overwrite what the admin is typing on auto-refresh
+const AD_FIELDS = {
+  'ad-banners-on': ['banners', 'enabled'], 'ad-b-320': ['banners', 'keys', '320x50'], 'ad-b-300': ['banners', 'keys', '300x250'],
+  'ad-b-728': ['banners', 'keys', '728x90'], 'ad-b-domain': ['banners', 'domain'],
+  'ad-dl-on': ['directLink', 'enabled'], 'ad-dl-url': ['directLink', 'url'], 'ad-dl-every': ['directLink', 'every'],
+  'ad-pu-on': ['popunder', 'enabled'], 'ad-pu-src': ['popunder', 'src'], 'ad-pu-delay': ['popunder', 'delayMinutes'],
+  'ad-sb-on': ['socialBar', 'enabled'], 'ad-sb-src': ['socialBar', 'src'],
+};
+function showAdStates(a) {
+  document.querySelectorAll('[data-state]').forEach(el => { const on = a[el.dataset.state]?.enabled; el.textContent = on ? 'ON' : 'OFF'; el.classList.toggle('on', !!on); });
+}
+async function loadAds() {
+  const a = await api('/ads');
+  for (const [id, path] of Object.entries(AD_FIELDS)) {
+    const v = path.reduce((o, k) => o?.[k], a);
+    const el = $(id);
+    if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? '';
+  }
+  showAdStates(a);
+  adsDirty = false;
+}
+async function saveAds() {
+  const body = {};
+  for (const [id, path] of Object.entries(AD_FIELDS)) {
+    const el = $(id);
+    let o = body;
+    path.slice(0, -1).forEach(k => { o = o[k] ??= {}; });
+    o[path.at(-1)] = el.type === 'checkbox' ? el.checked : el.type === 'number' ? Number(el.value) : el.value;
+  }
+  const r = await fetch('/admin/api/ads', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-admin-token': token }, body: JSON.stringify(body) });
+  const data = await r.json();
+  if (!r.ok) { $('adsMsg').innerHTML = `<span style="color:#FFB1AB">${esc(data.error)}</span>`; return; }
+  adsDirty = false;
+  await loadAds();
+  $('adsMsg').textContent = 'Saved. Everyone online already has the new settings.';
+  toast('Ad settings saved');
+}
+$('adsForm').addEventListener('input', () => { adsDirty = true; });
+
+// ---------- stats ----------
+let rangeDays = 30;
+document.querySelectorAll('#range button').forEach(b => b.onclick = () => {
+  rangeDays = Number(b.dataset.d);
+  tablePage = 1;
+  document.querySelectorAll('#range button').forEach(x => x.classList.toggle('on', x === b));
+  loadDaily();
+});
+const fmt = n => n >= 10000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, '') + 'K' : n.toLocaleString();
+const dayLabel = (d, opts = { month: 'short', day: 'numeric' }) => new Date(d + 'T12:00:00Z').toLocaleDateString(undefined, { ...opts, timeZone: 'UTC' });
+function niceMax(v) { if (v <= 4) return 4; const p = 10 ** Math.floor(Math.log10(v)); const m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+const ICONS = {
+  visitors: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',
+  sessions: 'M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3',
+  messages: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z',
+  peak: 'M3 17l6-6 4 4 8-8M15 7h6v6',
+};
+
+async function loadDaily() {
+  const data = await api('/daily?days=' + Math.max(rangeDays, 2));
+  const days = data.days;
+  const t = days.at(-1), y = days.at(-2);
+  const tile = (icon, label, value, sub) => `<div class="glass kpi"><div class="label"><span><svg class="i" viewBox="0 0 24 24"><path d="${ICONS[icon]}"/></svg></span>${label}</div>
+    <div class="value">${fmt(value)}</div><div class="sub">${sub}</div></div>`;
+  $('kpis').innerHTML =
+    tile('visitors', 'Visitors today', t.visitors, `Yesterday ${fmt(y.visitors)} · unique devices`) +
+    tile('sessions', 'Sessions today', t.sessions, `Yesterday ${fmt(y.sessions)} · sign-ins`) +
+    tile('messages', 'Messages today', t.messages + t.groupMessages, `Yesterday ${fmt(y.messages + y.groupMessages)} · private + group`) +
+    tile('peak', 'Peak online today', t.peakOnline, `Yesterday ${fmt(y.peakOnline)} · most at once`);
+  const shown = days.slice(-rangeDays);
+  $('chartTitle').textContent = `Unique visitors per day · last ${rangeDays} days`;
+  drawChart(shown);
+  drawCountries(data.countries);
+  $('countriesTitle').textContent = `Top countries · sessions, last ${rangeDays} days`;
+  tableRows = [...shown].reverse();
+  drawTable();
+  $('statsNote').textContent = `Days start at midnight (${data.timeZone}). Only totals are stored, no names or messages; kept for 90 days. Numbers update about every 30 seconds.`;
+}
+
+// "Day by day" table, newest first, 10 days per page
+const PAGE_SIZE = 10;
+let tableRows = [], tablePage = 1;
+function drawTable() {
+  const pages = Math.max(1, Math.ceil(tableRows.length / PAGE_SIZE));
+  tablePage = Math.min(Math.max(1, tablePage), pages);
+  const start = (tablePage - 1) * PAGE_SIZE;
+  const rows = tableRows.slice(start, start + PAGE_SIZE);
+  const btn = (p, label, title, disabled, on) =>
+    `<button type="button" class="pg${on ? ' on' : ''}" ${disabled ? 'disabled' : `onclick="tablePage=${p};drawTable()"`} title="${title}" ${on ? 'aria-current="page"' : ''}>${label}</button>`;
+  // page numbers: first, last, and the ones around the current page
+  const nums = [];
+  for (let p = 1; p <= pages; p++) {
+    if (p === 1 || p === pages || Math.abs(p - tablePage) <= 1) nums.push(p);
+    else if (nums.at(-1) !== '…') nums.push('…');
+  }
+  $('dailyTable').innerHTML = `<table><thead><tr><th>Date</th><th class="num">Visitors</th><th class="num">Sessions</th><th class="num">Private msgs</th><th class="num">Group msgs</th><th class="num">Groups created</th><th class="num">Peak online</th></tr></thead><tbody>${
+    rows.map(d => `<tr><td>${dayLabel(d.date, { weekday: 'short', month: 'short', day: 'numeric' })}</td><td class="num">${d.visitors.toLocaleString()}</td><td class="num">${d.sessions.toLocaleString()}</td><td class="num">${d.messages.toLocaleString()}</td><td class="num">${d.groupMessages.toLocaleString()}</td><td class="num">${d.groupsCreated.toLocaleString()}</td><td class="num">${d.peakOnline.toLocaleString()}</td></tr>`).join('')}</tbody></table>`;
+  $('dailyPager').innerHTML = pages < 2 ? '' : `
+    <span class="muted">Showing ${start + 1}–${start + rows.length} of ${tableRows.length} days</span>
+    <span class="pager">${btn(tablePage - 1, '‹', 'Newer days', tablePage === 1)}${
+      nums.map(p => p === '…' ? '<span class="pg-gap">…</span>' : btn(p, p, `Page ${p}`, false, p === tablePage)).join('')
+    }${btn(tablePage + 1, '›', 'Older days', tablePage === pages)}</span>`;
+}
+
+function drawChart(days) {
+  const W = 1000, H = 260, L = 40, R = 8, T = 22, B = 26;
+  const max = niceMax(Math.max(...days.map(d => d.visitors), 1));
+  const slot = (W - L - R) / days.length, bw = Math.min(24, slot * 0.62);
+  const yOf = v => T + (H - T - B) * (1 - v / max);
+  const ticks = [0, max / 2, max];
+  const peakIdx = days.reduce((bi, d, i) => (d.visitors > days[bi].visitors ? i : bi), 0);
+  const every = Math.ceil(days.length / 8);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Unique visitors per day">`;
+  for (const v of ticks) s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${yOf(v)}" y2="${yOf(v)}"/><text x="${L - 8}" y="${yOf(v) + 4}" text-anchor="end">${fmt(v)}</text>`;
+  days.forEach((d, i) => {
+    const cx = L + slot * i + slot / 2, x = cx - bw / 2, y = yOf(d.visitors), h = H - B - y;
+    s += `<rect class="hit" x="${L + slot * i}" y="${T}" width="${slot}" height="${H - T - B}" tabindex="0" data-i="${i}" data-y="${y}"/>`;
+    s += `<rect class="hl" x="${L + slot * i}" y="${T}" width="${slot}" height="${H - T - B}" rx="6"/>`;
+    if (h > 0.5) {
+      const r = Math.min(4, h, bw / 2); // 4px rounded data-end, square at the baseline
+      s += `<path class="bar" d="M${x},${H - B}V${y + r}Q${x},${y} ${x + r},${y}H${x + bw - r}Q${x + bw},${y} ${x + bw},${y + r}V${H - B}Z" pointer-events="none"/>`;
+    }
+    if ((i === peakIdx || i === days.length - 1) && d.visitors > 0) s += `<text class="val" x="${cx}" y="${y - 6}" text-anchor="middle">${fmt(d.visitors)}</text>`;
+    if ((i % every === 0 && days.length - 1 - i >= every) || i === days.length - 1) s += `<text x="${cx}" y="${H - 8}" text-anchor="middle">${i === days.length - 1 ? 'Today' : dayLabel(d.date)}</text>`;
+  });
+  s += `<line class="grid" x1="${L}" x2="${W - R}" y1="${H - B}" y2="${H - B}"/></svg>`;
+  const box = $('chart');
+  box.innerHTML = s + '<div class="tip" id="tip"></div>';
+  const tip = $('tip');
+  const show = el => {
+    const d = days[el.dataset.i], r = el.getBoundingClientRect(), br = box.getBoundingClientRect();
+    tip.innerHTML = `<b>${dayLabel(d.date, { weekday: 'short', month: 'short', day: 'numeric' })}</b>${d.visitors.toLocaleString()} visitors · ${d.sessions.toLocaleString()} sessions<br>${(d.messages + d.groupMessages).toLocaleString()} messages · peak ${d.peakOnline} online`;
+    tip.style.display = 'block';
+    tip.style.left = Math.min(Math.max(r.left - br.left + r.width / 2, 110), br.width - 110) + 'px';
+    tip.style.top = (Number(el.dataset.y) * br.width / W) + 'px';
+  };
+  box.querySelectorAll('.hit').forEach(el => { el.onmouseenter = el.onfocus = () => show(el); el.onmouseleave = el.onblur = () => { tip.style.display = 'none'; }; });
+}
+
+function drawCountries(list) {
+  if (!list.length) { $('countries').innerHTML = '<p class="muted">No visitors yet.</p>'; return; }
+  const top = list.slice(0, 8);
+  const rest = list.slice(8).reduce((n, [, v]) => n + v, 0);
+  if (rest) top.push(['Other', rest]);
+  const max = Math.max(...top.map(([, v]) => v));
+  $('countries').innerHTML = top.map(([c, v]) => `<div class="hbar"><span class="name">${c === 'Other' ? 'Other' : esc(countryName(c))}</span>
+    <span class="track"><span class="fill" style="width:${Math.max(1, (v / max) * 85)}%"></span><span class="num">${v.toLocaleString()}</span></span></div>`).join('');
+}
+
+async function refresh() {
+  if (!token) return lock(false);
+  try {
+    await loadStats();
+    if (!$('statsTab').hidden) await loadDaily();
+    if (!$('reports').hidden) await loadReports(); else api('/reports').then(l => { $('reportCount').innerHTML = l.length ? `<span class="chip" style="padding:1px 7px">${l.length}</span>` : ''; }).catch(() => {});
+    if (!$('users').hidden) await loadUsers();
+    if (!$('adsTab').hidden && !adsDirty) await loadAds();
+  } catch {}
+}
+refresh();
+setInterval(() => { if (token && !$('app').hidden) loadStats().catch(() => {}); }, 15000);
+</script></body></html>
