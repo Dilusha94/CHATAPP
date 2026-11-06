@@ -1,8 +1,8 @@
-# ChatNow — free anonymous 1-to-1 chat (Chatiw-style, fixed and modernised)
+# Chatiwo — free anonymous 1-to-1 chat (Chatiw-style, fixed and modernised)
 
 A fast, free, anonymous chat site monetised with Adsterra. Built to handle **3,000+ people online at the same time** on **free hosting** (Oracle Cloud Always Free + Cloudflare).
 
-> "ChatNow", `yoursite.lk` and `chat.yoursite.lk` are placeholders. Replace them with your real name and domain everywhere.
+> `yoursite.lk` and `chat.yoursite.lk` are placeholders. Replace them with your real domain everywhere.
 
 ## Documents (read in this order)
 
@@ -56,7 +56,7 @@ A fast, free, anonymous chat site monetised with Adsterra. Built to handle **3,0
 ## Data rules (as you specified)
 
 * **Logout → hard delete**: profile, nickname, every conversation the user was in, block list. Gone from Redis immediately.
-* **Idle 5 minutes → automatic logout + hard delete**. Only real activity (typing, sending, clicking, scrolling) counts; background heartbeats do not.
+* **Idle 10 minutes → automatic logout + hard delete**. Only real activity (typing, sending, clicking, scrolling) counts; background heartbeats do not.
 * **Closed tab / lost connection → deleted after 2 minutes** unless they come back.
 * **Only exception**: a conversation someone **reported** is kept for 7 days for moderator review, then auto-deleted.
 * **Moderation records (1 year)**: every sign-in (time, IP, device ID, nickname, gender, age, country, browser), every report (without messages) and every ban/unban are kept for **365 days** (`HISTORY_KEEP_DAYS`), then deleted automatically. Messages are never stored there. Admins see this as *Previous activity* on reports and *History* on online users, to spot people who keep returning under new names, genders or countries (VPN). Storage: PostgreSQL when `DATABASE_URL` is set (e.g. aaPanel), otherwise the built-in PGlite database in `server/data/history` (see `server/src/history.js`). The privacy page and FAQ say this.

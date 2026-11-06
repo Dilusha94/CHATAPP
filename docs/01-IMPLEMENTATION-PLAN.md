@@ -12,7 +12,7 @@ Estimated total: **3–5 weeks** part-time (1–2 weeks if you only customise th
 ## Phase 0 — Decisions & accounts (Day 1)
 
 ### 0.1 Decide the basics
-- ⬜ Choose the site name (replace "ChatNow" everywhere)
+- ✅ Site name chosen: Chatiwo (Chat In Worldwide Online), replaced everywhere
 - ⬜ Choose the domain, e.g. `yoursite.lk` (or `.com` for a global audience)
 - ⬜ Decide the main audience (Sri Lanka first, then global). Pick the Oracle region from this:
   - Sri Lanka / India → **Mumbai** or **Hyderabad**, or **Singapore**
@@ -64,7 +64,7 @@ Estimated total: **3–5 weeks** part-time (1–2 weeks if you only customise th
 ## Phase 2 — Backend core (Week 1)
 
 ### 2.1 Redis data model (`server/src/store.js`)
-- ✅ `user:{id}` HASH: nick, gender, age, country, state, visible, deviceId, token. **TTL 300 s**
+- ✅ `user:{id}` HASH: nick, gender, age, country, state, visible, deviceId, token. **TTL 600 s**
 - ✅ `online:index` SET: ids of online users
 - ✅ `nick:{lowercase}` STRING: reserves a nickname (unique among online users)
 - ✅ `chat:{idA}:{idB}` LIST: last 200 messages of a pair (JSON)
@@ -81,7 +81,7 @@ Estimated total: **3–5 weeks** part-time (1–2 weeks if you only customise th
 - ✅ Multiple tabs → one user (Socket.IO room `u:{id}`)
 - ✅ `disconnect`: 2-minute grace period, then hard delete
 - ✅ `session:logout`: **hard delete** (profile, nickname, all chats, partners, blocks)
-- ✅ Idle sweeper every 10 s: **5 min without real activity → logout + hard delete**
+- ✅ Idle sweeper every 10 s: **10 min without real activity → logout + hard delete**
 - ✅ `activity` event from client on real input only (heartbeats don't count)
 - ✅ Startup restore: after `pm2 reload`, users in Redis get 2 minutes to reconnect
 
@@ -163,7 +163,7 @@ Estimated total: **3–5 weeks** part-time (1–2 weeks if you only customise th
 
 - ⬜ Add Sinhala (and Tamil) UI text. Simple approach: a `lang.js` dictionary + a toggle in the header
 - ⬜ Change the welcome text on the Home view
-- ⬜ Tab title shows unread count: `(3) ChatNow`. Add in `App.jsx` with `useEffect` on unread count
+- ⬜ Tab title shows unread count: `(3) Chatiwo`. Add in `App.jsx` with `useEffect` on unread count
 - ⬜ Browser notifications (ask permission after first message) (optional)
 - ⬜ PWA manifest so people can "Add to Home screen" (optional)
 - ⬜ Check all screens in dark mode
@@ -202,7 +202,7 @@ Anonymous stranger chat attracts minors, scammers and spam bots. This protects u
 - ⬜ Message both ways; open another chat; come back: history still there
 - ⬜ Refresh the page: same session, chats still there
 - ⬜ Turn phone Wi-Fi off 30 s, then on: "Reconnecting…" then resumes
-- ⬜ Leave a tab untouched 5 min: warning at 4:00, logged out at 5:00, chats gone
+- ⬜ Leave a tab untouched 10 min: warning at 9:00, logged out at 10:00, chats gone
 - ⬜ Logout: the other side sees "left the chat"; your nickname is free again
 - ⬜ Block: the blocked person gets "User is unavailable"
 - ⬜ Report: appears in `/admin/` with the messages

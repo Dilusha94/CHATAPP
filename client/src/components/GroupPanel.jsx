@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useStore, ask } from '../lib/store.js';
-import { sendGroup, closeGroup, leaveGroup, kickMember, reportGroupMember, copyInvite, inviteUser, inviteLink } from '../lib/chat.js';
+import { sendGroup, sendGroupImage, closeGroup, leaveGroup, kickMember, reportGroupMember, copyInvite, inviteUser, inviteLink } from '../lib/chat.js';
 import { Avatar, GroupAvatar, Flag, GenderIcon, Icon, I } from './ui.jsx';
 import MessageText from './MessageText.jsx';
+import ImageMessage, { AttachButton } from './ImageMessage.jsx';
 import { countSentMessage } from '../lib/directLink.js';
 import AdBanner from './AdBanner.jsx';
 import { ReportDialog } from './ChatPanel.jsx';
@@ -78,7 +79,8 @@ export default function GroupPanel() {
                   <div className={`mb-1 ml-3 text-xs font-semibold ${m.fromUser?.gender === 'f' ? 'text-female-ink' : 'text-male-ink'}`}>{m.fromUser?.nick}</div>
                 )}
                 <div className={`rounded-3xl px-4 py-2.5 ${mine ? 'bubble-mine rounded-br-lg' : 'bg-surface-2 text-fg ring-1 ring-line rounded-bl-lg'} ${m.status === 'failed' ? 'opacity-60' : ''}`}>
-                  <MessageText text={m.text} mine={mine} />
+                  {m.image && <ImageMessage m={m} onLoad={() => endRef.current?.scrollIntoView({ block: 'end' })} />}
+                  {m.text && <MessageText text={m.text} mine={mine} />}
                   <div className={`mt-0.5 text-right text-[10px] ${mine ? 'text-white/75' : 'text-fg-subtle'}`}>
                     {m.status === 'sending' ? 'sending…' : m.status === 'failed' ? `not sent${m.error ? ': ' + m.error : ''}` : time(m.ts)}
                   </div>
@@ -100,6 +102,7 @@ export default function GroupPanel() {
           <input ref={inputRef} value={text} maxLength={500} onChange={e => setText(e.target.value)}
             placeholder={`Message ${g.name}…`}
             className="min-w-0 flex-1 bg-transparent px-5 py-3 text-fg outline-none placeholder:text-fg-subtle" />
+          <AttachButton onPick={sendGroupImage} />
           <button type="button" onClick={() => setEmoji(v => !v)} title="Emoji" className={`grid size-9 place-items-center rounded-full transition hover:bg-hover ${emoji ? 'text-accent' : 'text-fg-muted'}`}><Icon d={I.smile} /></button>
         </div>
         <button disabled={!text.trim()} title="Send" className="btn-primary btn-send size-12 shrink-0">

@@ -9,6 +9,8 @@ import { setupSocket, restoreFromRedis } from './socket.js';
 import { admin } from './admin.js';
 import { flush as flushStats } from './stats.js';
 import { initHistory, closeHistory } from './history.js';
+import { images, cleanup as cleanupImages } from './images.js';
+import { credits } from './credits.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -23,6 +25,8 @@ app.get('/health', async (_req, res) => {
   try { await redis.ping(); res.json({ ok: true, online: users.size }); }
   catch { res.status(500).json({ ok: false }); }
 });
+app.use(images);
+app.use('/api/ads', credits);
 app.use('/admin/api', admin);
 // Test-only: lets the smoke test inspect stored keys when there is no real Redis
 if (usingMemory) {
@@ -49,6 +53,8 @@ setupSocket(io);
 await initHistory();
 
 const restored = await restoreFromRedis();
+await cleanupImages();
+setInterval(() => cleanupImages().catch(console.error), config.imageSweepMs); // hourly: 24 h images, orphans, 7-day reported images
 server.listen(config.port, '127.0.0.1', () => {
   console.log(`chat server on :${config.port} (restored ${restored} users)`);
 });

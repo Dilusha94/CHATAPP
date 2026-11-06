@@ -12,7 +12,7 @@
 
 const ANYWHERE = [
   // pretending to be staff
-  'admin', 'moderator', 'support', 'official', 'staff', 'chatnow', 'owner',
+  'admin', 'moderator', 'support', 'official', 'staff', 'chatiwo', 'owner',
   // sexual / under-age
   'sex', 'porn', 'nude', 'naked', 'horny', 'hookup', 'escort', 'onlyfans', 'nsfw', 'xxx', 'boob', 'pussy',
   'penis', 'vagina', 'dick', 'cock', 'blowjob', 'handjob', 'milf', 'incest', 'pedo', 'paedo', 'loli', 'teen',

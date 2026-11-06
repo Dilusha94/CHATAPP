@@ -10,6 +10,7 @@ import { HomeView, GroupsView, InboxView, HistoryView, SearchView, ProfileView }
 import { Logo } from './components/ui.jsx';
 import AdBanner from './components/AdBanner.jsx';
 import ConfirmDialog from './components/ConfirmDialog.jsx';
+import RewardModal from './components/RewardModal.jsx';
 
 let started = false;
 
@@ -24,6 +25,7 @@ export default function App() {
       {status === 'ready' && <ChatLayout />}
       <Toast />
       <ConfirmDialog />
+      <RewardModal />
     </>
   );
 }

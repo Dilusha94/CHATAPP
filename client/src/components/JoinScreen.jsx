@@ -15,12 +15,12 @@ const FEATURES = [
 
 // Keep this text identical to the FAQPage structured data in index.html (Google checks they match).
 const FAQ = [
-  ['Is ChatNow really free?', 'Yes. ChatNow is always free and supported by ads. There is no sign-up and no app to install.'],
+  ['Is Chatiwo really free?', 'Yes. Chatiwo is always free and supported by ads. There is no sign-up and no app to install.'],
   ['Do I need to register?', 'No. Just pick a nickname, your gender and age, and start chatting. Your country is detected automatically.'],
-  ['Are my chats saved?', 'No. Every message is permanently deleted when you log out, after 5 minutes of inactivity, or 2 minutes after you close the tab. Only a conversation that someone reports is kept for 7 days so a moderator can review it. To stop abuse we keep a sign-in record (time, IP address, device ID, nickname, gender, age and country, never messages) for 1 year.'],
-  ['Who can use ChatNow?', 'Adults only. You must be 18 or older to chat.'],
+  ['Are my chats saved?', 'No. Every message is permanently deleted when you log out, after 10 minutes of inactivity, or 2 minutes after you close the tab. Only a conversation that someone reports is kept for 7 days so a moderator can review it. To stop abuse we keep a sign-in record (time, IP address, device ID, nickname, gender, age and country, never messages) for 1 year.'],
+  ['Who can use Chatiwo?', 'Adults only. You must be 18 or older to chat.'],
   ['What if someone bothers me?', 'Use Block to stop them messaging you, or Report to send the conversation to a moderator. Every report is reviewed by a human, and we never ban by IP address.'],
-  ['Does it work on my phone?', 'Yes. ChatNow works in any modern phone or computer browser.'],
+  ['Does it work on my phone?', 'Yes. Chatiwo works in any modern phone or computer browser.'],
 ];
 
 const NICK_RE = /^[A-Za-z0-9_ ]{3,20}$/; // same rule as the server
@@ -95,9 +95,16 @@ export default function JoinScreen() {
             <h1 className="text-[2.6rem] leading-[1.04] md:text-[4.2rem] font-bold tracking-[-0.035em] text-on-bg">
               Free chat with strangers.<br /><span className="hero-accent">No sign-up. No app.</span>
             </h1>
+            <p className="text-lg md:text-xl font-semibold tracking-tight">
+              <span className="hero-accent font-bold">Chatiwo</span>
+              <span className="text-on-bg-muted"> – </span>
+              <span className="text-on-bg">
+                <b className="text-[1.15em]">C</b>hat <b className="text-[1.15em]">I</b>n <b className="text-[1.15em]">W</b>orldwide <b className="text-[1.15em]">O</b>nline
+              </span>
+            </p>
             <p className="max-w-xl text-[17px] leading-relaxed text-on-bg-muted">
               Pick a nickname and start chatting one-to-one with people from Sri Lanka and around the world.
-              Your messages are never kept: when you log out, or stay inactive for 5 minutes, your profile and every message are permanently deleted.
+              Your messages are never kept: when you log out, or stay inactive for 10 minutes, your profile and every message are permanently deleted.
             </p>
           </div>
           <div className="flex justify-center"><AdBanner size="320x50" /></div>
@@ -219,6 +226,7 @@ export default function JoinScreen() {
         </div>
       </main>
       <footer className="py-8 text-center text-xs text-on-bg-muted">
+        <p className="mb-3">Chatiwo – Chat In Worldwide Online</p>
         <nav className="flex justify-center gap-5">
           <a href="/rules.html" className="hover:text-on-bg">Rules</a>
           <a href="/privacy.html" className="hover:text-on-bg">Privacy</a>

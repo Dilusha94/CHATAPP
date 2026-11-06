@@ -7,6 +7,7 @@ import { endSession } from './socket.js';
 import * as stats from './stats.js';
 import * as history from './history.js';
 import { getAds, updateAds } from './ads.js';
+import { sendReportImage, deleteReportImages } from './images.js';
 
 const safeEqual = (a, b) => {
   const x = Buffer.from(String(a)), y = Buffer.from(String(b));
@@ -60,7 +61,9 @@ admin.get('/users', (req, res) => {
 });
 
 admin.get('/reports', async (_req, res) => res.json(await db.listReports()));
-admin.delete('/reports/:id', async (req, res) => { await db.deleteReport(req.params.id); res.json({ ok: true }); });
+admin.delete('/reports/:id', async (req, res) => { await db.deleteReport(req.params.id); await deleteReportImages(req.params.id); res.json({ ok: true }); });
+// Pictures of a reported chat (copied when the report was filed, purged after 7 days or when dismissed)
+admin.get('/reports/:id/image/:name', (req, res) => sendReportImage(res, req.params.id, req.params.name));
 
 // body: { deviceId, reason, hours }
 admin.post('/ban', async (req, res) => {

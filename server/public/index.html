@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><meta name="theme-color" content="#100B09"><title>ChatNow Admin</title>
+<meta name="robots" content="noindex"><meta name="theme-color" content="#100B09"><title>Chatiwo Admin</title>
 <style>
 @font-face{font-family:Jakarta;src:url(fonts/jakarta.woff2) format('woff2');font-weight:200 800;font-display:swap}
 :root{
@@ -103,6 +103,7 @@ tr:last-child td{border-bottom:0}
 .pg-gap{color:var(--fg-subtle);padding:0 2px}tbody tr:hover td{background:rgb(255 255 255/.025)}
 
 /* reports */
+.rimg { display:block; max-width:260px; max-height:220px; margin-top:6px; border-radius:12px; cursor:zoom-in; border:1px solid rgba(255,255,255,.12) }
 .report{padding:20px}
 .report-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-size:12px;font-weight:600;background:rgb(240 83 74/.12);border:1px solid rgb(240 83 74/.3);color:#FFB1AB}
@@ -167,7 +168,7 @@ tr:last-child td{border-bottom:0}
   <div class="shape" style="width:190px;height:190px;border-radius:48px;left:calc(50% - 250px);top:calc(50% - 230px)"></div>
   <div class="shape" style="width:120px;height:120px;border-radius:50%;left:calc(50% + 150px);top:calc(50% + 40px);opacity:.9"></div>
   <form class="glass login" onsubmit="event.preventDefault(); signIn()">
-    <div class="logo"><span class="logo-mark"><svg class="i" viewBox="0 0 24 24" style="color:#fff"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span>ChatNow<small>Admin</small></div>
+    <div class="logo"><span class="logo-mark"><svg class="i" viewBox="0 0 24 24" style="color:#fff"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span>Chatiwo<small>Admin</small></div>
     <div style="margin-top:26px" class="eyebrow">Owner area</div>
     <h1>Sign in</h1>
     <p>Enter the <b style="color:var(--fg)">ADMIN_TOKEN</b> from <code>server/.env</code>.</p>
@@ -181,7 +182,7 @@ tr:last-child td{border-bottom:0}
 <!-- ============ app ============ -->
 <div id="app" hidden>
 <header>
-  <div class="logo"><span class="logo-mark"><svg class="i" viewBox="0 0 24 24" style="color:#fff"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span>ChatNow<small>Admin</small></div>
+  <div class="logo"><span class="logo-mark"><svg class="i" viewBox="0 0 24 24" style="color:#fff"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/></svg></span>Chatiwo<small>Admin</small></div>
   <nav class="tabs">
     <button data-t="statsTab" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15v2M11 11v6M15 7v10M19 12v5"/></svg>Stats</button>
     <button data-t="reports"><svg class="i" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/></svg>Reports <span id="reportCount"></span></button>
@@ -262,6 +263,14 @@ tr:last-child td{border-bottom:0}
           <div><label for="ad-sb-src">Social bar script</label><input class="field" id="ad-sb-src" placeholder="&lt;script src=&quot;//…js&quot;&gt;&lt;/script&gt; or https://…js"></div>
         </div>
       </div>
+      <div class="glass ad-card">
+        <div class="ad-head"><span class="ico"><svg class="i" viewBox="0 0 24 24"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zM8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zM21 15l-5-5L5 21"/></svg></span>
+          <div><h3>Image credits (rewarded ad)</h3><p>Sending a picture costs 1 credit. Users earn 2 credits by watching this ad (Monetag) for 12 seconds, up to 5 times a day. Turn OFF to make pictures free.</p></div>
+          <span class="state" data-state="rewarded"></span><label class="switch"><input type="checkbox" id="ad-rw-on"><span></span></label></div>
+        <div class="ad-fields">
+          <div><label for="ad-rw-src">Monetag script</label><input class="field" id="ad-rw-src" placeholder="&lt;script src=&quot;//…js&quot;&gt;&lt;/script&gt; or https://…js (empty = placeholder for testing)"></div>
+        </div>
+      </div>
       <div class="glass save-bar"><span class="muted" id="adsMsg" style="font-size:13px">Turning an ad off stops it for new pages right away; a popunder or social bar already showing goes away on the user's next page load.</span>
         <button class="btn btn-primary" type="submit">Save changes</button></div>
     </form>
@@ -318,6 +327,23 @@ async function loadStats() {
 }
 
 // ---------- reports ----------
+// Report pictures need the admin token, which an <img> tag cannot send: fetch them and show as blobs.
+const rimgCache = new Map(); // path -> blob URL (the report list refreshes itself; fetch each picture once)
+async function hydrateReportImages() {
+  for (const el of document.querySelectorAll('img.rimg[data-src]')) {
+    const path = el.dataset.src; el.removeAttribute('data-src');
+    try {
+      if (!rimgCache.has(path)) {
+        const r = await fetch('/admin/api' + path, { headers: { 'x-admin-token': token } });
+        if (!r.ok) throw new Error();
+        rimgCache.set(path, URL.createObjectURL(await r.blob()));
+      }
+      el.src = rimgCache.get(path);
+      el.alt = 'Shared image';
+      el.onclick = () => window.open(el.src, '_blank');
+    } catch { el.replaceWith(Object.assign(document.createElement('span'), { className: 'muted', textContent: '[image expired or no longer stored]' })); }
+  }
+}
 async function loadReports() {
   const list = await api('/reports');
   window.R = Object.fromEntries(list.map(r => [r.id, r]));
@@ -335,13 +361,15 @@ async function loadReports() {
       </div>
       <div class="msgs">${r.messages.map(m => {
         const nick = m.fromUser?.nick || (m.from === r.reporter.id ? r.reporter.nick : r.reported.nick);
-        return `<div class="msg ${m.from === r.reported.id ? 'flagged' : ''}"><b>${esc(nick)}${m.from === r.reported.id ? ' ⚑' : ''}</b>${esc(m.text)}</div>`;
+        const img = m.image ? `<div><img class="rimg" data-src="/reports/${esc(r.id)}/image/${esc(m.from)}_${esc(m.image)}" alt="Shared image (loading…)" title="Click to enlarge"></div>` : '';
+        return `<div class="msg ${m.from === r.reported.id ? 'flagged' : ''}"><b>${esc(nick)}${m.from === r.reported.id ? ' ⚑' : ''}</b>${esc(m.text)}${img}</div>`;
       }).join('') || '<span class="muted">No messages</span>'}</div>
       <div class="hist" id="hist-${r.id}"><span class="muted">Loading previous activity…</span></div>
       <div class="actions"><button class="btn btn-danger" onclick="banReport('${r.id}',24)">Ban 24h</button>
         <button class="btn btn-danger" onclick="banReport('${r.id}',168)">Ban 7 days</button>
         <button class="btn btn-ghost" onclick="dismiss('${r.id}')">Dismiss</button></div>
     </div>`).join('<div style="height:14px"></div>') : '<div class="glass empty"><div class="big">🎉</div>No open reports</div>';
+  hydrateReportImages();
   for (const r of list) {
     api(`/history?device=${encodeURIComponent(r.reported.deviceId)}&ip=${encodeURIComponent(r.reported.ip || '')}`)
       .then(h => { const el = $('hist-' + r.id); if (el) el.innerHTML = renderHistory(h); })
@@ -470,6 +498,7 @@ const AD_FIELDS = {
   'ad-dl-on': ['directLink', 'enabled'], 'ad-dl-url': ['directLink', 'url'], 'ad-dl-every': ['directLink', 'every'],
   'ad-pu-on': ['popunder', 'enabled'], 'ad-pu-src': ['popunder', 'src'], 'ad-pu-delay': ['popunder', 'delayMinutes'],
   'ad-sb-on': ['socialBar', 'enabled'], 'ad-sb-src': ['socialBar', 'src'],
+  'ad-rw-on': ['rewarded', 'enabled'], 'ad-rw-src': ['rewarded', 'src'],
 };
 function showAdStates(a) {
   document.querySelectorAll('[data-state]').forEach(el => { const on = a[el.dataset.state]?.enabled; el.textContent = on ? 'ON' : 'OFF'; el.classList.toggle('on', !!on); });

@@ -48,6 +48,7 @@ export const I = {
   soundOn: 'M11 5 6 9H2v6h4l5 4z|M15.5 8.5a5 5 0 0 1 0 7|M19 5a10 10 0 0 1 0 14',
   soundOff: 'M11 5 6 9H2v6h4l5 4z|M22 9l-6 6|M16 9l6 6',
   back: 'M15 18l-6-6 6-6',
+  image: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z|M8.5 10a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z|M21 15l-5-5L5 21',
   send: 'M22 2 11 13|M22 2l-7 20-4-9-9-4z',
   block: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z|M4.9 4.9l14.2 14.2',
   flag: 'M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z|M4 22v-7',
@@ -69,7 +70,7 @@ export const Logo = () => (
       <Icon d={I.chat} className="size-5" />
     </div>
     <span className="text-xl font-bold tracking-tight text-on-bg">
-      {import.meta.env.VITE_SITE_NAME || 'ChatNow'}
+      {import.meta.env.VITE_SITE_NAME || 'Chatiwo'}
     </span>
   </div>
 );

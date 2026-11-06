@@ -1,8 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useStore, ask } from '../lib/store.js';
-import { send, typing, closeChat, blockUser, reportUser } from '../lib/chat.js';
+import { send, sendImage, typing, closeChat, blockUser, reportUser } from '../lib/chat.js';
 import { Avatar, Flag, Icon, I } from './ui.jsx';
 import MessageText from './MessageText.jsx';
+import ImageMessage, { AttachButton } from './ImageMessage.jsx';
 import { countSentMessage } from '../lib/directLink.js';
 import AdBanner from './AdBanner.jsx';
 import { countryName } from '../lib/countries.js';
@@ -68,7 +69,8 @@ export default function ChatPanel() {
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} ${grouped ? '' : 'pt-2'}`}>
               <div className={`max-w-[80%] rounded-3xl px-4 py-2.5 ${mine ? 'bubble-mine rounded-br-lg' : 'bg-surface-2 text-fg ring-1 ring-line rounded-bl-lg'} ${m.status === 'failed' ? 'opacity-60' : ''}`}>
-                <MessageText text={m.text} mine={mine} />
+                {m.image && <ImageMessage m={m} onLoad={() => endRef.current?.scrollIntoView({ block: 'end' })} />}
+                {m.text && <MessageText text={m.text} mine={mine} />}
                 <div className={`mt-0.5 text-right text-[10px] ${mine ? 'text-white/75' : 'text-fg-subtle'}`}>
                   {m.status === 'sending' ? 'sending…' : m.status === 'failed' ? `not sent${m.error ? ': ' + m.error : ''}` : time(m.ts)}
                 </div>
@@ -91,6 +93,7 @@ export default function ChatPanel() {
             onChange={e => { setText(e.target.value); typing(); }}
             placeholder={chat.left ? `${u.nick} has left` : 'Type a message…'}
             className="min-w-0 flex-1 bg-transparent px-5 py-3 text-fg outline-none placeholder:text-fg-subtle disabled:cursor-not-allowed" />
+          <AttachButton onPick={sendImage} disabled={chat.left} />
           <button type="button" onClick={() => setEmoji(v => !v)} title="Emoji" className={`grid size-9 place-items-center rounded-full transition hover:bg-hover ${emoji ? 'text-accent' : 'text-fg-muted'}`}><Icon d={I.smile} /></button>
         </div>
         <button disabled={!text.trim() || chat.left} title="Send" className="btn-primary btn-send size-12 shrink-0">

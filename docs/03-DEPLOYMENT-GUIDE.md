@@ -227,7 +227,7 @@ PORT=3000
 REDIS_URL=redis://127.0.0.1:6379
 CLIENT_ORIGIN=https://yoursite.lk,https://www.yoursite.lk
 ADMIN_TOKEN=<already generated, keep it>
-IDLE_SECONDS=300
+IDLE_SECONDS=600
 DISCONNECT_GRACE_SECONDS=120
 BLOCK_LINKS=true
 ```
@@ -379,7 +379,7 @@ curl https://chat.yoursite.lk/health
 |---|---|
 | `NODE_VERSION` | `22` |
 | `VITE_SERVER_URL` | `https://chat.yoursite.lk` |
-| `VITE_SITE_NAME` | `ChatNow` (your name) |
+| `VITE_SITE_NAME` | `Chatiwo` (your name) |
 | (ads) | none: switch ads on later in the admin panel → **Ads** tab (doc 04), no redeploy needed |
 
 4. **Save and Deploy**. You get `https://chatapp-xxx.pages.dev`.
@@ -437,7 +437,7 @@ Afterwards the load users log out automatically. Delete the micro VM if you don'
 The admin page already needs the token. Cloudflare Access adds a second lock: before the page even
 loads, Cloudflare asks for a **one-time code sent to your email**. Strangers never reach your server.
 
-1. Cloudflare dashboard → **Zero Trust** (first time: choose a team name, e.g. `chatnow`, plan **Free**, $0; a card may be asked for but is not charged).
+1. Cloudflare dashboard → **Zero Trust** (first time: choose a team name, e.g. `chatiwo`, plan **Free**, $0; a card may be asked for but is not charged).
 2. *Settings* → *Authentication* → *Login methods*: make sure **One-time PIN** is listed (it is by default).
 3. *Access* → *Applications* → **Add an application** → **Self-hosted**.
 4. *Application name* `Chat admin`. *Session duration* **24 hours** (you'll be asked for a new code once a day).

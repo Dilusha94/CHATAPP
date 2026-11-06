@@ -28,7 +28,7 @@ export function HomeView() {
           <li>✅ Free forever and works on your phone.</li>
           <li>💬 Your chats stay when you switch between conversations.</li>
           <li>🛡️ Use <b className="text-fg">Block</b> or <b className="text-fg">Report</b> on anyone who bothers you. Reports are checked by a human.</li>
-          <li>⏱️ You are logged out after 5 minutes of inactivity, and everything is deleted.</li>
+          <li>⏱️ You are logged out after 10 minutes of inactivity, and everything is deleted.</li>
           <li>🔒 Never share passwords, OTP codes, bank details or your home address.</li>
         </ul>
       </Card>

@@ -1,7 +1,7 @@
 {
-  "name": "ChatNow – Free Chat with Strangers",
-  "short_name": "ChatNow",
-  "description": "Free anonymous one-to-one chat. No sign-up, no app. 18+ only.",
+  "name": "Chatiwo – Free Chat with Strangers",
+  "short_name": "Chatiwo",
+  "description": "Chat In Worldwide Online. Free anonymous one-to-one chat. No sign-up, no app. 18+ only.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

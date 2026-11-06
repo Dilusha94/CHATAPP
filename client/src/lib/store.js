@@ -18,6 +18,8 @@ export const useStore = create(() => ({
   notice: null,           // { kind: 'info'|'warn'|'error', text }
   dialog: null,           // open confirmation dialog, see ask()
   ads: null,              // ad switches from the admin panel (Ads tab), pushed live by the server
+  credits: 0,             // image credits (1 credit = 1 picture), earned by watching a rewarded ad
+  rewardModal: false,     // the "watch an ad to earn credits" popup
   lastActivity: Date.now(),
   connected: false,
 }));

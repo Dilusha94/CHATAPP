@@ -79,7 +79,7 @@ Check: open http://localhost:3000/health → `{"ok":true,"online":0}`
 | `REDIS_URL` | memory | `memory` = in-memory test store (local only). `redis://127.0.0.1:6379` = real Redis (required in production) |
 | `CLIENT_ORIGIN` | http://localhost:5173 | Allowed frontend(s), comma separated |
 | `ADMIN_TOKEN` | change-me | Password for `/admin/`. Use `openssl rand -hex 32` in production |
-| `IDLE_SECONDS` | 300 | Idle time before auto logout + delete |
+| `IDLE_SECONDS` | 600 | Idle time before auto logout + delete |
 | `DISCONNECT_GRACE_SECONDS` | 120 | How long a closed tab / lost connection is kept |
 | `BLOCK_LINKS` | true | Replace links with `[link removed]` |
 
@@ -125,16 +125,17 @@ The smoke test uses short timers so the idle test finishes in seconds. Stop `npm
 Terminal 1, the test server:
 ```powershell
 cd server
-$env:IDLE_SECONDS=4; $env:SWEEP_INTERVAL_MS=1000; $env:DISCONNECT_GRACE_SECONDS=2; node --env-file=.env src/index.js
+$env:IDLE_SECONDS=4; $env:SWEEP_INTERVAL_MS=1000; $env:DISCONNECT_GRACE_SECONDS=2; $env:AD_MIN_SECONDS=1; $env:AD_CAP_IP=1000; $env:IMAGE_SWEEP_MS=1000; $env:ADMIN_TOKEN="test"; $env:UPLOAD_DIR="$PWD\data\test-uploads"; $env:REPORTED_DIR="$PWD\data\test-reported"; node --env-file=.env src/index.js
 ```
 
-Terminal 2:
+Terminal 2 (the image test needs the same three folder/token variables):
 ```powershell
 cd server
+$env:ADMIN_TOKEN="test"; $env:UPLOAD_DIR="$PWD\data\test-uploads"; $env:REPORTED_DIR="$PWD\data\test-reported"
 npm test
 ```
 
-macOS/Linux/Git Bash, terminal 1: `IDLE_SECONDS=4 SWEEP_INTERVAL_MS=1000 DISCONNECT_GRACE_SECONDS=2 node --env-file=.env src/index.js`
+macOS/Linux/Git Bash, terminal 1: `IDLE_SECONDS=4 SWEEP_INTERVAL_MS=1000 DISCONNECT_GRACE_SECONDS=2 AD_MIN_SECONDS=1 AD_CAP_IP=1000 IMAGE_SWEEP_MS=1000 ADMIN_TOKEN=test UPLOAD_DIR=/tmp/up REPORTED_DIR=/tmp/rep node --env-file=.env src/index.js` (then run `npm test` with the same `ADMIN_TOKEN`, `UPLOAD_DIR`, `REPORTED_DIR`)
 
 Expected:
 ```
@@ -187,7 +188,7 @@ ALL GROUP TESTS PASSED
 If your normal dev server is already using port 3000, start the test server on another port and point the tests at it:
 ```powershell
 # terminal 1
-$env:PORT=3100; $env:IDLE_SECONDS=4; $env:SWEEP_INTERVAL_MS=1000; $env:DISCONNECT_GRACE_SECONDS=2; node --env-file=.env src/index.js
+$env:PORT=3100; $env:IDLE_SECONDS=4; $env:SWEEP_INTERVAL_MS=1000; $env:DISCONNECT_GRACE_SECONDS=2; $env:AD_MIN_SECONDS=1; $env:AD_CAP_IP=1000; $env:IMAGE_SWEEP_MS=1000; $env:ADMIN_TOKEN="test"; $env:UPLOAD_DIR="$PWD\data\test-uploads"; $env:REPORTED_DIR="$PWD\data\test-reported"; node --env-file=.env src/index.js
 # terminal 2
 $env:URL='http://127.0.0.1:3100'; npm test
 ```
@@ -202,6 +203,21 @@ cd server
 N=1000 DURATION=30 npm run load          # PowerShell: $env:N=1000; $env:DURATION=30; npm run load
 ```
 Output every second: `joined`, `failed`, `sent`, `received`, latency `p50/p95/p99`. On Windows you may hit open-file limits above ~1,000. Do the real 3,000 test against the live server (doc 03 step 14).
+
+
+### Images and image credits
+
+Pictures can be sent in private chats and groups (picture button next to the emoji button).
+
+| Rule | Where |
+|---|---|
+| Every picture is re-encoded on the server to **WebP, max 1280 px, quality 82** and stripped of EXIF/GPS | `server/src/images.js` (`compress`, settings in `config.js`) |
+| Stored in `server/data/uploads/<userId>/`; deleted at logout/idle/ban and **24 h** after upload by an hourly cleanup job | `images.js` (`cleanup`), `IMAGE_TTL_HOURS`, `IMAGE_SWEEP_MS` |
+| When a chat is **reported**, its pictures are copied to `server/data/reported/<reportId>/`, shown in **Admin → Reports**, and purged after **7 days** (or when the report is dismissed) | `images.js` (`preserveForReport`), `REPORT_TTL_SECONDS` |
+| **1 credit = 1 picture.** Users start with 0. Watching the sponsor ad for 12 s earns 2 credits, max 5 ads per device per day (15 per IP) | `server/src/credits.js`, `AD_MIN_SECONDS`, `AD_REWARD_CREDITS`, `AD_CAP_DEVICE`, `AD_CAP_IP` |
+| The ad and the credit gate are switched in **Admin → Ads → Image credits**. OFF = pictures are free. No script pasted = a placeholder box stands in for the ad (testing) | `server/src/ads.js`, `client/src/components/RewardModal.jsx` |
+
+The server checks the claim by time: `POST /api/ads/start` notes the time, `POST /api/ads/verify-reward` is refused until the minimum time really passed, and each start can be claimed once. It cannot see whether the ad network really showed an ad.
 
 ---
 

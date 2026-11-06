@@ -3,8 +3,9 @@ import { socket, call, getDeviceId, session } from './socket.js';
 import { set, get, notify, upsertChat, upsertGroup } from './store.js';
 import { ding } from './sound.js';
 import { watchAdScripts, markLogin, clearLogin } from './adScripts.js';
+import { prepareImage } from './image.js';
 
-const IDLE_MS = 5 * 60 * 1000;
+const IDLE_MS = 10 * 60 * 1000;
 
 const toMap = list => Object.fromEntries(list.map(u => [u.id, u]));
 
@@ -50,7 +51,7 @@ function enterReady(res) {
   const users = toMap(res.list || []);
   for (const pid of Object.keys(chats)) chats[pid] = { ...chats[pid], user: users[pid] || chats[pid].user };
   markLogin(false); // after a page refresh the 3-minute popunder timer keeps counting from the original sign-in
-  set({ status: 'ready', me: res.user, users, count: res.count, chats, lastActivity: Date.now() });
+  set({ status: 'ready', me: res.user, credits: res.credits || 0, users, count: res.count, chats, lastActivity: Date.now() });
   enterGroups(res.groups);
   consumePendingGroup();
 }
@@ -63,16 +64,18 @@ export function init() {
     if (!s) return set({ status: get().status === 'banned' ? 'banned' : 'join' });
     const res = await call('session:resume', s);
     if (res.ok) return enterReady(res);
+    const hadSession = !!get().me; // (read before the reset below, so the notice can actually show)
     session.clear();
     clearLogin();
     if (res.banned) return set({ status: 'banned', banned: res.banned });
-    set({ status: 'join', me: null, chats: {}, active: null, groups: {}, activeGroup: null });
-    if (get().me) notify('Your session ended. Please join again.', 'warn');
+    set({ status: 'join', me: null, chats: {}, active: null, groups: {}, activeGroup: null, credits: 0, rewardModal: false });
+    if (hadSession) notify('Your session ended. Please join again.', 'warn');
   });
 
   socket.on('disconnect', () => set({ connected: false }));
   socket.on('count', count => set({ count }));
   socket.on('ads', ads => set({ ads }));
+  socket.on('credits', ({ credits }) => set({ credits })); // earned in another tab
   watchAdScripts();
   socket.on('geo', ({ country }) => set({ geoCountry: country || null }));
 
@@ -145,14 +148,14 @@ export function init() {
     session.clear();
     clearLogin();
     const text = {
-      idle: 'You were logged out after 5 minutes of inactivity. Your chats were deleted.',
+      idle: 'You were logged out after 10 minutes of inactivity. Your chats were deleted.',
       logout: 'You logged out. All your chats were deleted.',
       kicked: 'You were removed by a moderator.',
       disconnected: 'Your session expired.',
       banned: 'You were banned.',
     }[reason] || 'Session ended.';
     if (reason === 'banned') set({ status: 'banned', banned: ban || { reason: 'Rule violation' } });
-    else set({ status: 'join', me: null, chats: {}, active: null, users: {}, view: 'home', groups: {}, activeGroup: null });
+    else set({ status: 'join', me: null, chats: {}, active: null, users: {}, view: 'home', groups: {}, activeGroup: null, credits: 0, rewardModal: false });
     notify(text, reason === 'logout' ? 'info' : 'warn');
     // reconnect a fresh socket so the user can join again
     setTimeout(() => { if (!socket.connected) socket.connect(); }, 300);
@@ -217,6 +220,90 @@ async function sendTo(pid, text) {
 }
 
 const sendError = res => notify(res.error === 'rate_limited' ? 'Slow down a little.' : res.error, 'warn');
+
+// ---------- image sharing + credits ----------
+const SERVER = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+/** Where a shared image lives. Our own just-sent picture is shown from memory (no download). */
+export const imageUrl = m => m.localUrl || `${SERVER}/uploads/${m.from}/${m.image}`;
+
+/** Sending pictures costs credits while the admin has the credit gate switched on (Ads tab) */
+export const creditGateOn = () => !!get().ads?.rewarded?.enabled;
+export const openRewardModal = () => set({ rewardModal: true });
+export const closeRewardModal = () => set({ rewardModal: false });
+
+const authHeaders = () => { const s = session.get(); return s ? { 'x-user-id': s.userId, 'x-token': s.token } : null; };
+
+/** The login is gone (server restarted, session expired…): close the popup and say so, instead of a confusing error */
+function sessionLost() {
+  set({ rewardModal: false });
+  if (get().status === 'ready') notify('Your session ended. Please join again.', 'warn');
+}
+
+/** POST /api/ads/start | /api/ads/verify-reward. A successful claim updates the credit counter. */
+export async function adApi(path, body = {}) {
+  const auth = authHeaders();
+  if (!auth) { sessionLost(); return { ok: false, error: 'Your session ended. Please join again.' }; }
+  try {
+    const res = await fetch(`${SERVER}/api/ads/${path}`, { method: 'POST', headers: { 'content-type': 'application/json', ...auth }, body: JSON.stringify(body) });
+    const j = await res.json().catch(() => null);
+    if (j?.ok && j.credits !== undefined) set({ credits: j.credits });
+    if (res.status === 401) sessionLost(); // the server no longer knows this user
+    return j || { ok: false, error: 'Could not reach the server. Try again.' };
+  } catch { return { ok: false, error: 'Connection problem, try again.' }; }
+}
+
+/** Uploads the (already resized) picture. Returns { file } or { error } */
+async function uploadImage(blob) {
+  const auth = authHeaders();
+  if (!auth) return { error: 'Not signed in' };
+  try {
+    const res = await fetch(`${SERVER}/upload`, { method: 'POST', headers: { 'content-type': blob.type, ...auth }, body: blob });
+    const j = await res.json().catch(() => null);
+    return j?.ok ? { file: j.file } : { error: j?.error || 'Could not upload the image' };
+  } catch { return { error: 'Connection problem, try again' }; }
+}
+
+/**
+ * Shared by private chats and groups: shows the picture right away, uploads it, then sends the
+ * message. `put(fn)` updates this conversation's messages, `emit(file, cid)` sends the socket event.
+ * Without credits the popup to earn some opens instead.
+ */
+async function shareImage(file, base, put, emit) {
+  if (creditGateOn() && get().credits < 1) return openRewardModal();
+  let blob;
+  try { blob = await prepareImage(file); } catch (e) { return notify(e.message, 'warn'); }
+  const cid = Math.random().toString(36).slice(2);
+  const localUrl = URL.createObjectURL(blob);
+  put(msgs => [...msgs, { ...base, id: 'tmp-' + cid, cid, text: '', image: 'pending', localUrl, ts: Date.now(), status: 'sending' }]);
+  const up = await uploadImage(blob);
+  const res = up.file ? await emit(up.file, cid) : { ok: false, error: up.error };
+  if (res.credits !== undefined) set({ credits: res.credits });
+  if (!res.ok && res.error === 'no_credits') {
+    put(msgs => msgs.filter(m => m.cid !== cid));
+    return openRewardModal();
+  }
+  put(msgs => msgs.map(m => (m.cid === cid && m.status === 'sending'
+    ? (res.ok ? { ...res.msg, localUrl, status: 'sent' } : { ...m, status: 'failed', error: res.error })
+    : m)));
+  if (!res.ok) sendError(res);
+}
+
+export function sendImage(file) {
+  const pid = get().active;
+  if (!pid) return;
+  return shareImage(file, { from: get().me.id, to: pid },
+    fn => upsertChat(pid, c => ({ messages: fn(c.messages) })),
+    (image, cid) => call('msg:send', { to: pid, text: '', image, cid }));
+}
+
+export function sendGroupImage(file) {
+  const gid = get().activeGroup;
+  if (!gid) return;
+  const me = get().me;
+  return shareImage(file, { gid, from: me.id, fromUser: me },
+    fn => upsertGroup(gid, g => ({ messages: fn(g.messages) })),
+    (image, cid) => call('group:send', { gid, text: '', image, cid }));
+}
 
 export async function send(text) {
   const pid = get().active;

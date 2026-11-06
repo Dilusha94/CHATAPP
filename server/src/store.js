@@ -24,10 +24,12 @@ export const K = {
   blocks: id => `blocks:${id}`,
   ban: device => `ban:${device}`,
   report: id => `report:${id}`,
+  adSession: id => `adsess:${id}`,
+  adViews: day => `adviews:${day}`,
   reports: 'reports:index',
 };
 
-/** id -> { id, nick, gender, age, country, state, visible, deviceId, token, ip, ua, lastActive } */
+/** id -> { id, nick, gender, age, country, state, visible, deviceId, token, ip, ua, credits, lastActive } */
 export const users = new Map();
 
 export const newId = () => crypto.randomBytes(8).toString('hex');
@@ -43,11 +45,11 @@ export async function createUser(u) {
   const ok = await redis.set(K.nick(u.nick), u.id, 'EX', config.idleSeconds + 60, 'NX');
   if (!ok) return false;
   const now = Date.now();
-  const full = { ...u, lastActive: now };
+  const full = { ...u, credits: 0, lastActive: now };
   await redis.multi()
     .hset(K.user(u.id), {
       nick: u.nick, gender: u.gender, age: u.age, country: u.country, state: u.state,
-      visible: u.visible ? 1 : 0, deviceId: u.deviceId, token: u.token, ip: u.ip || '', ua: u.ua || '',
+      visible: u.visible ? 1 : 0, deviceId: u.deviceId, token: u.token, ip: u.ip || '', ua: u.ua || '', credits: 0,
     })
     .expire(K.user(u.id), config.idleSeconds)
     .sadd(K.online, u.id)
@@ -61,7 +63,7 @@ export async function loadUser(id) {
   if (!h || !h.nick) return null;
   return {
     id, nick: h.nick, gender: h.gender, age: Number(h.age), country: h.country, state: h.state,
-    visible: h.visible === '1', deviceId: h.deviceId, token: h.token, ip: h.ip || '', ua: h.ua || '', lastActive: Date.now(),
+    visible: h.visible === '1', deviceId: h.deviceId, token: h.token, ip: h.ip || '', ua: h.ua || '', credits: Math.max(0, Number(h.credits) || 0), lastActive: Date.now(),
   };
 }
 

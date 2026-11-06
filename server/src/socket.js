@@ -7,13 +7,21 @@ import { groups } from './groups.js';
 import * as stats from './stats.js';
 import * as history from './history.js';
 import { getAds, setAdsIo } from './ads.js';
+import { imageExists, deleteUserImages, preserveForReport, FILE_RE } from './images.js';
+import { creditGateOn } from './ads.js';
+import { spendCredit, refundCredit, setCreditsIo } from './credits.js';
 
 /** Real visitor IP: Nginx copies Cloudflare's CF-Connecting-IP into X-Real-IP (Node only listens on 127.0.0.1) */
 const clientIp = socket => String(socket.handshake.headers['x-real-ip'] || socket.handshake.headers['cf-connecting-ip'] || socket.handshake.address || '')
   .replace(/^::ffff:/, '').slice(0, 64);
 
 /** Reports go to Redis (with the conversation, 7 days) and to the 1-year history (without messages) */
-const fileReport = r => { history.reported(r); return db.saveReport(r); };
+const fileReport = async r => {
+  history.reported(r);
+  const id = await db.saveReport(r);
+  await preserveForReport(id, r.messages); // pictures of the chat are kept 7 days for the moderators
+  return id;
+};
 
 /** Runtime-only state per user (rate limits, grace timers). Never persisted. */
 const rt = new Map();
@@ -39,6 +47,16 @@ function flushDiff() {
 
 const room = id => `u:${id}`;
 
+/** Sending a picture costs 1 credit (when the credit gate is on). true = charged, null = free, false = no credits. */
+const chargeImage = async (u, img) => (!img || !creditGateOn() ? null : (await spendCredit(u)) ? true : false);
+
+/** undefined = no image, false = invalid / not this user's file, otherwise the file name */
+const ownImage = async (u, image) => {
+  if (image === undefined || image === null || image === '') return undefined;
+  const f = String(image);
+  return FILE_RE.test(f) && (await imageExists(u.id, f)) ? f : false;
+};
+
 /** Logout / idle / kick / ban — always ends in a HARD DELETE. */
 export async function endSession(id, reason, extra = {}) {
   const clearRuntime = () => {
@@ -54,6 +72,7 @@ export async function endSession(id, reason, extra = {}) {
   history.sessionEnded(id, reason);
   await grp.leaveAllGroups(id);
   const partners = await db.purgeUser(id);
+  await deleteUserImages(id);
   // Events (or the disconnect handler) that ran during the purge may have recreated runtime state
   clearRuntime();
   for (const p of partners) io?.to(room(p)).emit('partner:left', { id });
@@ -93,9 +112,10 @@ export function setupSocket(server) {
   io = server;
   grp.setGroupIo(server);
   setAdsIo(server);
+  setCreditsIo(server);
   setInterval(flushDiff, config.diffFlushMs);
 
-  // Idle sweeper: 5 min with no real activity -> logout + hard delete
+  // Idle sweeper: 10 min with no real activity -> logout + hard delete
   setInterval(() => {
     const cutoff = Date.now() - config.idleSeconds * 1000;
     for (const u of users.values()) if (u.lastActive < cutoff) endSession(u.id, 'idle').catch(console.error);
@@ -137,7 +157,7 @@ export function setupSocket(server) {
         stats.session(user);
         history.sessionStarted(user);
         stats.online(users.size);
-        ack({ ok: true, user: { ...publicUser(user), visible: user.visible }, token: user.token, list: visibleList(user.id), count: users.size });
+        ack({ ok: true, user: { ...publicUser(user), visible: user.visible }, token: user.token, credits: user.credits, list: visibleList(user.id), count: users.size });
       } catch (e) { console.error(e); ack({ ok: false, error: 'server_error' }); }
     });
 
@@ -151,7 +171,7 @@ export function setupSocket(server) {
         await attach(socket, user);
         db.touch(user.id);
         stats.online(users.size);
-        ack({ ok: true, user: { ...publicUser(user), visible: user.visible }, list: visibleList(user.id), count: users.size, partners: [...runtime(user.id).partners], groups: grp.groupsOf(user.id).map(grp.publicGroup) });
+        ack({ ok: true, user: { ...publicUser(user), visible: user.visible }, credits: user.credits, list: visibleList(user.id), count: users.size, partners: [...runtime(user.id).partners], groups: grp.groupsOf(user.id).map(grp.publicGroup) });
       } catch (e) { console.error(e); ack({ ok: false, error: 'server_error' }); }
     });
 
@@ -160,7 +180,7 @@ export function setupSocket(server) {
     socket.on('activity', guard(async u => db.touch(u.id)));
 
     // ---------- messaging ----------
-    socket.on('msg:send', guard(async (u, { to, text, cid }, ack) => {
+    socket.on('msg:send', guard(async (u, { to, text, cid, image }, ack) => {
       db.touch(u.id);
       const r = runtime(u.id);
       if (r.mutedUntil > Date.now()) return ack({ ok: false, error: 'muted', until: r.mutedUntil });
@@ -175,16 +195,20 @@ export function setupSocket(server) {
         if (!allow(r.newChat, config.newChatLimit)) { strike(u.id, socket); return ack({ ok: false, error: 'Too many new chats. Wait a minute.' }); }
       }
       const clean = cleanText(text);
-      if (!clean) return ack({ ok: false, error: 'empty' });
+      const img = await ownImage(u, image);
+      if (img === false) return ack({ ok: false, error: 'Image not found. Please try again.' });
+      if (!clean && !img) return ack({ ok: false, error: 'empty' });
 
-      const msg = { id: db.newId(), cid: String(cid || '').slice(0, 40), from: u.id, to: target.id, text: clean, ts: Date.now() };
-      await db.saveMessage(msg);
+      const msg = { id: db.newId(), cid: String(cid || '').slice(0, 40), from: u.id, to: target.id, text: clean, ts: Date.now(), ...(img && { image: img }) };
+      const spent = await chargeImage(u, img);
+      if (spent === false) return ack({ ok: false, error: 'no_credits', credits: u.credits });
+      try { await db.saveMessage(msg); } catch (e) { if (spent) await refundCredit(u); throw e; }
       r.partners.add(target.id);
       runtime(target.id).partners.add(u.id);
       io.to(room(target.id)).emit('msg:new', { ...msg, fromUser: publicUser(u) });
       socket.to(room(u.id)).emit('msg:new', { ...msg, fromUser: publicUser(u) }); // my other tabs
       stats.message();
-      ack({ ok: true, msg });
+      ack({ ok: true, msg, credits: u.credits });
     }));
 
     socket.on('chat:history', guard(async (u, { with: other }, ack) => {
@@ -290,7 +314,7 @@ export function setupSocket(server) {
       ack({ ok: true, messages: await grp.groupHistory(g.id) });
     }));
 
-    socket.on('group:send', guard(async (u, { gid, text, cid }, ack) => {
+    socket.on('group:send', guard(async (u, { gid, text, cid, image }, ack) => {
       db.touch(u.id);
       const r = runtime(u.id);
       if (r.mutedUntil > Date.now()) return ack({ ok: false, error: 'muted', until: r.mutedUntil });
@@ -298,12 +322,16 @@ export function setupSocket(server) {
       const g = memberGroup(u, gid);
       if (!g) return ack({ ok: false, error: 'You are not in this group' });
       const clean = cleanText(text);
-      if (!clean) return ack({ ok: false, error: 'empty' });
-      const msg = { id: db.newId(), cid: String(cid || '').slice(0, 40), gid: g.id, from: u.id, fromUser: publicUser(u), text: clean, ts: Date.now() };
-      await grp.saveGroupMessage(g, msg);
+      const img = await ownImage(u, image);
+      if (img === false) return ack({ ok: false, error: 'Image not found. Please try again.' });
+      if (!clean && !img) return ack({ ok: false, error: 'empty' });
+      const msg = { id: db.newId(), cid: String(cid || '').slice(0, 40), gid: g.id, from: u.id, fromUser: publicUser(u), text: clean, ts: Date.now(), ...(img && { image: img }) };
+      const spent = await chargeImage(u, img);
+      if (spent === false) return ack({ ok: false, error: 'no_credits', credits: u.credits });
+      try { await grp.saveGroupMessage(g, msg); } catch (e) { if (spent) await refundCredit(u); throw e; }
       socket.to(grp.groupRoom(g.id)).emit('group:msg', { gid: g.id, msg }); // everyone else + my other tabs
       stats.groupMessage();
-      ack({ ok: true, msg });
+      ack({ ok: true, msg, credits: u.credits });
     }));
 
     socket.on('group:leave', guard(async (u, { gid }, ack) => {

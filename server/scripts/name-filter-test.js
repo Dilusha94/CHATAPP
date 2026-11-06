@@ -3,7 +3,7 @@ import { isBadName } from '../src/badwords.js';
 
 const BLOCK = [
   'fuck', 'FuckYou', 'fvck boy', 'f_u_c_k', 'fuuuuck', 'Sh1t', 'b1tch', 'b!tch', 'Big Ass', 'BigAss', 'ass_lover',
-  'hotsex', 's3xy', 'SEXY_GIRL', 'p0rn', 'nude pics', 'escort lk', 'xxx', 'Admin', 'ChatNow Support', 'Moderator',
+  'hotsex', 's3xy', 'SEXY_GIRL', 'p0rn', 'nude pics', 'escort lk', 'xxx', 'Admin', 'Chatiwo Support', 'Moderator',
   'mod', 'teen girl', '16yo', 'girl 15 yrs', 'little kid', 'pakaya', 'Huththa', 'ponnaya123', 'kariya', 'wesi',
   'Paka', 'puka', 'nigga', 'k1llyourself', 'cumshot', 'cum', 'r4pe', 'pussy cat',
 ];

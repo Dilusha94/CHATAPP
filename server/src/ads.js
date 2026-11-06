@@ -11,6 +11,9 @@ const DEFAULTS = {
   directLink: { enabled: false, url: '', every: 20 },      // opened on every Nth message a user sends
   popunder:   { enabled: false, src: '', delayMinutes: 3 }, // script loaded N minutes after sign-in
   socialBar:  { enabled: false, src: '' },                  // script loaded right after sign-in
+  // Image credits: ON = sending a picture costs 1 credit, earned by watching this ad (Monetag).
+  // OFF = pictures are free. Empty src = a placeholder is shown instead of the ad (testing).
+  rewarded:   { enabled: true, src: '' },
 };
 
 let io = null;
@@ -52,10 +55,11 @@ const merge = (base, over) => {
 
 let settings = load();
 export const getAds = () => settings;
+export const creditGateOn = () => !!settings.rewarded?.enabled;
 
 /** Validates a full settings object from the admin panel; returns { settings } or { error } */
 export function updateAds(input = {}) {
-  const b = input.banners || {}, d = input.directLink || {}, p = input.popunder || {}, s = input.socialBar || {};
+  const b = input.banners || {}, d = input.directLink || {}, p = input.popunder || {}, s = input.socialBar || {}, r = input.rewarded || {};
   const next = {
     banners: {
       enabled: !!b.enabled,
@@ -65,6 +69,7 @@ export function updateAds(input = {}) {
     directLink: { enabled: !!d.enabled, url: '', every: Math.min(500, Math.max(1, Math.round(Number(d.every) || 20))) },
     popunder: { enabled: !!p.enabled, src: scriptUrl(p.src), delayMinutes: Math.min(120, Math.max(0, Number(p.delayMinutes) || 0)) },
     socialBar: { enabled: !!s.enabled, src: scriptUrl(s.src) },
+    rewarded: { enabled: r.enabled === undefined ? DEFAULTS.rewarded.enabled : !!r.enabled, src: scriptUrl(r.src) },
   };
   const link = clean(d.url);
   try { if (link) { const u = new URL(link); if (u.protocol === 'https:' || u.protocol === 'http:') next.directLink.url = u.href; } } catch {}
